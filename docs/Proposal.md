@@ -1,14 +1,14 @@
-# Project Title
+# Tetroxide
 
 Team members:
 
-- Name1
-- Name2
-- Name3
+- Eric Hamilton
+- Jesse Pingitore
+- Andrew Idak
 
 ## Summary Description
 
-A summary description of the overall goal of the project.
+A command line based version of [Tetris](https://www.wikiwand.com/en/Tetris), written in Rust. Ideally uses a [Ncurses](https://www.wikiwand.com/en/Ncurses) wrapper crate (such as [curses-rs](https://github.com/jeaye/ncurses-rs) or [cursive](https://crates.io/crates/cursive)) to handle the GUI component of the app.
 
 ## Additional Details
 
@@ -22,7 +22,7 @@ A summary description of the overall goal of the project.
   using the [`test_case`](https://crates.io/crates/test-case) crate,
   [`quickcheck`](https://crates.io/crates/quickcheck) crate,
   [`proptest`](https://crates.io/crates/proptest) crate, or [`cargo
-  fuzz`](https://rust-fuzz.github.io/book/cargo-fuzz.html) tool.
+fuzz`](https://rust-fuzz.github.io/book/cargo-fuzz.html) tool.
 - Thoughts on a “minimal viable product” and “stretch goals”. Be sure to review
   the final project grading rubric and consider organizing the project around a
   core deliverable that will almost certainly be achieved and then a number of
