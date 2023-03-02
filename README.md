@@ -1,7 +1,7 @@
-# Project Title
+# Tetroxide
 
 Team members:
 
-- Name1
-- Name2
-- Name3
+- Eric Hamilton
+- Jesse Pingitore
+- Andrew Idak
