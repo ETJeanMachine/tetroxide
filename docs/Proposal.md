@@ -8,13 +8,11 @@ Team members:
 
 ## Summary Description
 
-A command line based version of [Tetris](https://www.wikiwand.com/en/Tetris), written in Rust. Ideally uses a [Ncurses](https://www.wikiwand.com/en/Ncurses) wrapper crate (such as [curses-rs](https://github.com/jeaye/ncurses-rs) or [cursive](https://crates.io/crates/cursive)) to handle the GUI component of the app.
+A command line based version of [Tetris](https://en.wikipedia.org/wiki/Tetris?oldformat=true), written in Rust. Ideally, will be using a [Ncurses](https://en.wikipedia.org/wiki/Ncurses?oldformat=true) wrapper crate (such as [curses-rs](https://github.com/jeaye/ncurses-rs) or [cursive](https://crates.io/crates/cursive)) to handle the GUI component of the app.
 
 ## Additional Details
 
-- One or more typical “use cases”. These might include “storyboards” explaining
-  how a user would interact with the program or some interesting “input/output”
-  examples.
+- The application should start up upon running `cargo run`. Once started, a single-player version of tetris would begin (depending on stretch goals, this would actually prompt the user for which gamemode they wish to start in, be it single player or multiplayer).
 - A sketch of intended components (key functions, key data structures, separate
   modules).
 - Thoughts on testing. These might include critical functions or data structures
