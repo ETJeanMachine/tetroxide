@@ -1,0 +1,24 @@
+Fair proposal.
+
+Just implementing Tetris is a bit small for a project.  Reasonable stretch
+goals; multiplayer, either local or networked, would be desirable.
+
+Although a game sounds complicted for testing, the game logic of Tetris is quite
+simple and should admit reasonable unit tests.  In fact, it should be fairly
+straightforward to write unit tests of the form "when <gamestate> steps in
+response to <event>, it will have <new_gamestate> and return <output>".
+
+Definitely think about how to organize the code into modules and crates.  It
+should be quite easy to have a `tetris` crate that is independent of any UI.
+The key operation would be to update the game state in response to some event
+(e.g., "rotate", "down", "tick" (i.e., no explicit user event, just the passage
+of time)) and provide a possible response (e.g., "game over", "illegal move",
+...).  Single player Tetris would not need a double-ended queue of upcoming
+pieces; there is the (already chosen) next piece and simply some stored random
+number state that can be used to generate the next random piece when needed.
+
+Be sure to review the final project grading rubric consider how you will justify
+that the final project is of suitable size/scope/effort.
+
+
+Score: 10/10
