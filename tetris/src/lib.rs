@@ -45,10 +45,10 @@ impl Bag {
     /// empty, it does nothing, as it is unable to fill a bag already full.
     /// Otherwise, the bag is filled up with shuffled elements.
     fn fill(&mut self) {
-        if self.0.len() > 0 {
+        if !self.0.is_empty() {
             return;
         }
-        let mut new_bag = vec![];
+        let mut new_bag = Vec::with_capacity(7);
         for tetromino in Tetromino::iter() {
             new_bag.push(tetromino);
         }
@@ -75,9 +75,7 @@ struct ActivePiece {
     pos: Pos,
     rotation: Rotation,
 }
-impl ActivePiece {
-    fn new() {}
-}
+impl ActivePiece {}
 
 struct Tetris {
     board: [[u8; 10]; 24],
