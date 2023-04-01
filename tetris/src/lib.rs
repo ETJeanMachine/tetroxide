@@ -1,10 +1,11 @@
+use std::collections::VecDeque;
+
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use std::collections::VecDeque;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
-/// A Tetromino is a piece in tetris. They are all made up of exactly 4 blocks.
+/// A Tetromino is a tetromino in tetris. They are all made up of exactly 4 blocks.
 /// It can be one of 7 different variants:
 /// - `I` Pieces, also called Line Pieces.
 /// - `O` Pieces, also called Square Pieces.
@@ -22,11 +23,11 @@ enum Tetromino {
     Z,
 }
 #[derive(Debug, EnumIter)]
-enum Rotation {
+enum RotationState {
     Up,
+    Right,
     Down,
     Left,
-    Right,
 }
 /// A bag is a data structure used by Tetris to represent the queue of incoming
 /// pieces.
@@ -34,7 +35,7 @@ struct Bag(Vec<Tetromino>);
 impl Bag {
     /// Creates a new bag with randomly shuffled Tetromino's. A bag always has
     /// at most 7 tetromino's inside of it, one of each of the main pieces, as
-    /// to ensure that a player isn't constantly getting the same piece over
+    /// to ensure that a player isn't constantly getting the same tetromino over
     /// and over, but there is still an element of randomness.
     fn new() -> Self {
         let mut bag = Bag(Vec::with_capacity(7));
@@ -66,28 +67,65 @@ impl Iterator for Bag {
 }
 
 struct Pos(usize, usize);
-impl Pos {}
+impl Pos {
+    fn new(row: usize, col: usize) -> Self {
+        // Asserting the pos is within bounds we want or else we panic.
+        assert_eq!(row < 40, col < 10);
+        Pos(row, col)
+    }
+    fn coords(&self) -> (usize, usize) {
+        (self.0, self.1)
+    }
+}
 
 struct ActivePiece {
-    piece: Tetromino,
-    pos: Pos,
-    rotation: Rotation,
+    tetromino: Tetromino,
+    origin: Pos,
+    rotation: RotationState,
 }
-impl ActivePiece {}
+impl ActivePiece {
+    fn new(tetromino: Tetromino) -> Self {
+        panic!()
+    }
+
+    fn rotate(&mut self, board: [[u8; 10]; 40]) {
+        if let Tetromino::O = self.tetromino {
+            return;
+        }
+    }
+
+    fn drop(&mut self) {}
+
+    fn hard_drop(&mut self, board: [[u8; 10]; 40]) {}
+}
 
 struct Tetris {
-    board: [[u8; 10]; 24],
-    queue: VecDeque<Tetromino>,
+    board: [[u8; 10]; 40],
     active: ActivePiece,
+    queue: VecDeque<Tetromino>,
     bag: Bag,
 }
-// impl Tetris {
-//     pub fn new() -> Self {
-//         let mut bag =
-//         Tetris {
-//             board: [[0; 10]; 24],
-//             queue: VecDeque::new(),
-//             active: ActivePiece { piece: (), pos: () },
-//         }
-//     }
-// }
+impl Tetris {
+    pub fn new() -> Self {
+        let board = [[0; 10]; 40];
+        let mut bag = Bag::new();
+        // Placeholder.
+        let mut active = ActivePiece::new(Tetromino::I);
+        let mut queue = VecDeque::with_capacity(4);
+        for i in 0..=4 {
+            if let Some(t) = bag.next() {
+                if i == 0 {
+                    active = ActivePiece::new(t);
+                } else {
+                    queue.push_back(t);
+                }
+            }
+        }
+        Tetris {
+            board,
+            active,
+            queue,
+            bag,
+        }
+    }
+}
