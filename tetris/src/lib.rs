@@ -111,14 +111,17 @@ impl Tetris {
         let mut bag = Bag::new();
         // Placeholder.
         let mut active = ActivePiece::new(Tetromino::I);
+        if let Some(t) = bag.next() {
+            // We know the bag will always be full, but we must create a
+            // placeholder anyways.
+            active = ActivePiece::new(t);
+        }
+        // The queue is always a size of 4, and contains the next 4 tetrominos
+        // from the bag, after the initial piece.
         let mut queue = VecDeque::with_capacity(4);
-        for i in 0..=4 {
+        while queue.len() < 4 {
             if let Some(t) = bag.next() {
-                if i == 0 {
-                    active = ActivePiece::new(t);
-                } else {
-                    queue.push_back(t);
-                }
+                queue.push_back(t);
             }
         }
         Tetris {
