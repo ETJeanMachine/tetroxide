@@ -169,7 +169,7 @@ impl ActivePiece {
     fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) {
         let new_rotation = self.rotation.rotate(clockwise);
         // The new state that we're validating.
-        let new_state = ActivePiece {
+        let mut new_state = ActivePiece {
             tetromino: self.tetromino,
             origin: self.origin,
             rotation: new_rotation,
