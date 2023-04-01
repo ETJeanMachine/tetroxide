@@ -8,4 +8,4 @@
 //     fn parse_res() -> Result<(), FarmParseError> {
 //         Err(FarmParseError(String::from("Missing UFO (`U`)")))
 //     }
-// } How tests work in rust, use a mod for a single test.
+// } // How tests work in rust, use a mod for a single test.
