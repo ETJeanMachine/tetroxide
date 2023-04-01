@@ -48,12 +48,10 @@ impl Bag {
         if !self.0.is_empty() {
             return;
         }
-        let mut new_bag = Vec::with_capacity(7);
         for tetromino in Tetromino::iter() {
-            new_bag.push(tetromino);
+            self.0.push(tetromino);
         }
-        new_bag.shuffle(&mut thread_rng());
-        self.0 = new_bag;
+        self.0.shuffle(&mut thread_rng());
     }
 }
 impl Iterator for Bag {
