@@ -18,24 +18,25 @@ enum Rotation {
     Left,
     Right,
 }
-struct Bag(VecDeque<Tetromino>);
+/// A bag is a data structure used by Tetris to represent the queue of incoming pieces.
+struct Bag(Vec<Tetromino>);
 impl Bag {
     /// Creates a new bag with randomly shuffled Tetromino's.
     /// A bag always has at most 7 tetromino's inside of it, one
     /// of each of the main pieces, as to ensure that a player isn't constantly
     /// getting the same piece over and over, but there is still an element of randomness.
     fn new() -> Self {
-        let mut bag = Bag(VecDeque::new());
+        let mut bag = Bag(Vec::with_capacity(7));
         bag.fill();
         bag
     }
     /// Fills an empty bag with randomly shuffled Tetromino's.
-    /// If the bag isn't empty, it returns `false`, as it is unable to
-    /// fill a bag already full. After successfully filling the bag it returns
-    /// `true`.
-    fn fill(&mut self) -> bool {
+    /// If the bag isn't empty, it does nothing, as it is unable to
+    /// fill a bag already full. Otherwise, the bag is filled up with
+    /// shuffled elements.
+    fn fill(&mut self) {
         if self.0.len() > 0 {
-            return false;
+            return;
         }
         let mut temp = vec![
             Tetromino::I,
@@ -47,26 +48,19 @@ impl Bag {
             Tetromino::Z,
         ];
         temp.shuffle(&mut thread_rng());
-        self.0 = VecDeque::from(temp);
-        true
+        self.0 = temp;
     }
 }
 impl Iterator for Bag {
     type Item = Tetromino;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        // We try to fill it regardless of anything...
+        self.fill();
+        // Then we simply pop from the top of the bag!
+        self.0.pop()
     }
 }
-// impl IntoIterator for Bag {
-//     type Item = Tetromino;
-
-//     type IntoIter = Vec<Tetromino>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         todo!()
-//     }
-// }
 
 struct Pos(usize, usize);
 impl Pos {}
