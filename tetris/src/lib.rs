@@ -302,13 +302,13 @@ impl ActivePiece {
                     (State::Up, State::Right) | (State::Left, State::Down) => kick_data_i1,
                     // CCW to Spawn State OR CW from Inverted Spawn State
                     (State::Right, State::Up) | (State::Down, State::Left) => {
-                        kick_data_i1.iter().map(|(x, y)| (-x, -y)).collect()
+                        kick_data_i1.into_iter().map(|(x, y)| (-x, -y)).collect()
                     }
                     // CW to Inverted Spawn State OR CCW from Spawn State
                     (State::Right, State::Down) | (State::Up, State::Left) => kick_data_i2,
                     // CCW to Inverted Spawn State OR CW to Spawn State
                     (State::Down, State::Right) | (State::Left, State::Up) => {
-                        kick_data_i2.iter().map(|(x, y)| (-x, -y)).collect()
+                        kick_data_i2.into_iter().map(|(x, y)| (-x, -y)).collect()
                     }
                     _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
                 },
@@ -317,34 +317,32 @@ impl ActivePiece {
                     (State::Up, State::Right) | (State::Down, State::Right) => kick_data,
                     // CCW to Spawn State OR CW from Inverted Spawn State
                     (State::Right, State::Up) | (State::Right, State::Down) => {
-                        kick_data.iter().map(|(a, b)| (-a, -b)).collect()
+                        kick_data.into_iter().map(|(a, b)| (-a, -b)).collect()
                     }
                     // CW from Inverted Spawn State OR CW to Spawn State
                     (State::Down, State::Left) | (State::Left, State::Up) => {
-                        kick_data.iter().map(|(x, y)| (-x, *y)).collect()
+                        kick_data.into_iter().map(|(x, y)| (-x, y)).collect()
                     }
                     // CCW to Inverted Spawn State OR CCW from Spawn State
                     (State::Left, State::Down) | (State::Up, State::Left) => {
-                        kick_data.iter().map(|(a, b)| (*a, -b)).collect()
+                        kick_data.into_iter().map(|(a, b)| (a, -b)).collect()
                     }
                     _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
                 },
             }
-            .iter()
-            .map(|(x, y)| origin.try_move(*x, *y)),
+            .into_iter()
+            .map(|(x, y)| origin.try_move(x, y)),
         );
         // Attempting all of our tests.
-        for test in tests {
-            if let Some(pos) = test {
-                let new_state = ActivePiece {
-                    tetromino: self.tetromino,
-                    origin: pos,
-                    rotation: new_rotation,
-                };
-                // Returning if we've successfully validated a given state!
-                if self.validate(&new_state, board) {
-                    return;
-                }
+        for pos in tests.into_iter().flatten() {
+            let new_state = ActivePiece {
+                tetromino: self.tetromino,
+                origin: pos,
+                rotation: new_rotation,
+            };
+            // Returning if we've successfully validated a given state!
+            if self.validate(&new_state, board) {
+                return;
             }
         }
     }
