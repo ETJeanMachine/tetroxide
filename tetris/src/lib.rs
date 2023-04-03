@@ -158,121 +158,141 @@ impl ActivePiece {
     fn validate(&mut self, new_state: &ActivePiece, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
         let x = new_state.origin.0;
         let y = new_state.origin.1;
-        
-        match new_state.tetromino {
+        let valid_pos = match new_state.tetromino {
             Tetromino::I => match new_state.rotation {
                 State::Up => {
-                    (x > 0 && x < MAX_COL - 2 && y < MAX_ROW) &&
-                    (board[x-1][y] | board[x][y] | board[x+1][y] | board[x+2][y]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 2 && y < MAX_ROW)
+                        && (board[x - 1][y] | board[x][y] | board[x + 1][y] | board[x + 2][y]) == 0
+                }
                 State::Right => {
-                    (x < MAX_COL && y > 0 && y < MAX_ROW - 2) &&
-                    (board[x][y-1] | board[x][y] | board[x][y+1] | board[x][y+2]) == 0
-                },
+                    (x < MAX_COL && y > 0 && y < MAX_ROW - 2)
+                        && (board[x][y - 1] | board[x][y] | board[x][y + 1] | board[x][y + 2]) == 0
+                }
                 State::Down => {
-                    (x > 1 && x < MAX_COL - 1 && y < MAX_ROW) &&
-                    (board[x-2][y] | board[x-1][y] | board[x][y] | board[x+1][y]) == 0
-                },
+                    (x > 1 && x < MAX_COL - 1 && y < MAX_ROW)
+                        && (board[x - 2][y] | board[x - 1][y] | board[x][y] | board[x + 1][y]) == 0
+                }
                 State::Left => {
-                    (x < MAX_COL && y > 1 && y < MAX_ROW - 1) &&
-                    (board[x][y-2] | board[x][y-1] | board[x][y] | board[x][y+1]) == 0
-                },
+                    (x < MAX_COL && y > 1 && y < MAX_ROW - 1)
+                        && (board[x][y - 2] | board[x][y - 1] | board[x][y] | board[x][y + 1]) == 0
+                }
             },
             Tetromino::O => {
-                (x < MAX_COL - 1 && y > 1 && y < MAX_ROW) &&
-                (board[x][y-1] | board[x+1][y-1] | board[x][y] | board[x+1][y]) == 0
-            },
+                (x < MAX_COL - 1 && y > 1 && y < MAX_ROW)
+                    && (board[x][y - 1] | board[x + 1][y - 1] | board[x][y] | board[x + 1][y]) == 0
+            }
             Tetromino::T => match new_state.rotation {
                 State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0) &&
-                    (board[x][y-1] | board[x-1][y] | board[x][y] | board[x+1][y]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y > 0)
+                        && (board[x][y - 1] | board[x - 1][y] | board[x][y] | board[x + 1][y]) == 0
+                }
                 State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x][y-1] | board[x][y] | board[x+1][y] | board[x][y+1]) == 0
-                },
+                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x][y - 1] | board[x][y] | board[x + 1][y] | board[x][y + 1]) == 0
+                }
                 State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1) &&
-                    (board[x-1][y] | board[x][y] | board[x+1][y] | board[x][y+1]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
+                        && (board[x - 1][y] | board[x][y] | board[x + 1][y] | board[x][y + 1]) == 0
+                }
                 State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x][y-1] | board[x-1][y] | board[x][y] | board[x][y+1]) == 0
+                    (x > 0 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x][y - 1] | board[x - 1][y] | board[x][y] | board[x][y + 1]) == 0
                 }
             },
             Tetromino::J => match new_state.rotation {
                 State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0) &&
-                    (board[x-1][y-1] | board[x-1][y] | board[x][y] | board[x+1][y]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y > 0)
+                        && (board[x - 1][y - 1] | board[x - 1][y] | board[x][y] | board[x + 1][y])
+                            == 0
+                }
                 State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x][y-1] | board[x+1][y-1] | board[x][y] | board[x][y+1]) == 0
-                },
+                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x][y - 1] | board[x + 1][y - 1] | board[x][y] | board[x][y + 1])
+                            == 0
+                }
                 State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1) &&
-                    (board[x-1][y] | board[x][y] | board[x+1][y] | board[x+1][y+1]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
+                        && (board[x - 1][y] | board[x][y] | board[x + 1][y] | board[x + 1][y + 1])
+                            == 0
+                }
                 State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x][y+1] | board[x][y] | board[x-1][y+1] | board[x][y+1]) == 0
+                    (x > 0 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x][y + 1] | board[x][y] | board[x - 1][y + 1] | board[x][y + 1])
+                            == 0
                 }
             },
             Tetromino::L => match new_state.rotation {
                 State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0) &&
-                    (board[x+1][y-1] | board[x-1][y] | board[x][y] | board[x+1][y]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y > 0)
+                        && (board[x + 1][y - 1] | board[x - 1][y] | board[x][y] | board[x + 1][y])
+                            == 0
+                }
                 State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x][y-1] | board[x][y] | board[x][y+1] | board[x+1][y+1]) == 0
-                },
+                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x][y - 1] | board[x][y] | board[x][y + 1] | board[x + 1][y + 1])
+                            == 0
+                }
                 State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1) &&
-                    (board[x-1][y] | board[x][y] | board[x+1][y] | board[x-1][y+1]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
+                        && (board[x - 1][y] | board[x][y] | board[x + 1][y] | board[x - 1][y + 1])
+                            == 0
+                }
                 State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x-1][y-1] | board[x][y-1] | board[x][y] | board[x][y+1]) == 0
+                    (x > 0 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x - 1][y - 1] | board[x][y - 1] | board[x][y] | board[x][y + 1])
+                            == 0
                 }
             },
             Tetromino::S => match new_state.rotation {
                 State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0) &&
-                    (board[x][y-1] | board[x+1][y-1] | board[x-1][y] | board[x][y]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y > 0)
+                        && (board[x][y - 1] | board[x + 1][y - 1] | board[x - 1][y] | board[x][y])
+                            == 0
+                }
                 State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x][y-1] | board[x][y] | board[x+1][y] | board[x+1][y+1]) == 0
-                },
+                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x][y - 1] | board[x][y] | board[x + 1][y] | board[x + 1][y + 1])
+                            == 0
+                }
                 State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1) &&
-                    (board[x][y] | board[x+1][y] | board[x-1][y+1] | board[x][y+1]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
+                        && (board[x][y] | board[x + 1][y] | board[x - 1][y + 1] | board[x][y + 1])
+                            == 0
+                }
                 State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x-1][y-1] | board[x-1][y] | board[x][y] | board[x][y+1]) == 0
+                    (x > 0 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x - 1][y - 1] | board[x - 1][y] | board[x][y] | board[x][y + 1])
+                            == 0
                 }
             },
             Tetromino::Z => match new_state.rotation {
                 State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0) &&
-                    (board[x-1][y-1] | board[x][y-1] | board[x][y] | board[x+1][y]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y > 0)
+                        && (board[x - 1][y - 1] | board[x][y - 1] | board[x][y] | board[x + 1][y])
+                            == 0
+                }
                 State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x+1][y-1] | board[x][y-1] | board[x][y] | board[x+1][y]) == 0
-                },
+                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x + 1][y - 1] | board[x][y - 1] | board[x][y] | board[x + 1][y])
+                            == 0
+                }
                 State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1) &&
-                    (board[x+1][y-1] | board[x][y] | board[x+1][y] | board[x][y+1]) == 0
-                },
+                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
+                        && (board[x + 1][y - 1] | board[x][y] | board[x + 1][y] | board[x][y + 1])
+                            == 0
+                }
                 State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1) &&
-                    (board[x][y-1] | board[x-1][y] | board[x][y] | board[x-1][y+1]) == 0
+                    (x > 0 && y > 0 && y < MAX_ROW - 1)
+                        && (board[x][y - 1] | board[x - 1][y] | board[x][y] | board[x - 1][y + 1])
+                            == 0
                 }
             },
+        };
+        if valid_pos {
+            self.origin = new_state.origin;
+            self.rotation = new_state.rotation;
         }
+        valid_pos
     }
 
     /// Tetris's rotational system is complex. To refer to it, please see
@@ -299,7 +319,10 @@ impl ActivePiece {
             Tetromino::I => match (self.rotation, new_rotation) {
                 (State::Up, State::Right) | (State::Right, State::Up) => {
                     if clockwise {
-                        vec![origin.move_dir(State::Left, 1), origin.move_dir(State::Left, 1)]
+                        vec![
+                            origin.move_dir(State::Left, 1),
+                            origin.move_dir(State::Left, 1),
+                        ]
                     } else {
                         vec![origin.move_dir(State::Right, 1)]
                     }
