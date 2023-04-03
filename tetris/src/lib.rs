@@ -310,26 +310,78 @@ impl ActivePiece {
         // These are the different "origin" states we will be testing.
         let mut tests = vec![Some(self.origin)];
         // Adding the other 4 tests (wall-kicks).
-        let (row, col) = self.origin.coords();
         let new_rotation = self.rotation.rotate(clockwise);
         // We extend our possible tests with the 4 additional tests:
         let origin = self.origin;
+        // Handling the fact that numbers are identical whether cw/ccw, but the dirs are
+        // swapped.
+        let left_cw = if clockwise { State::Left } else { State::Right };
+        let right_cw = if clockwise { State::Right } else { State::Left };
+        let up_cw = if clockwise { State::Up } else { State::Down };
+        let down_cw = if clockwise { State::Down } else { State::Up };
         tests.extend(match self.tetromino {
             Tetromino::O => return, /* O Tetromino's have no rotational logic. */
             Tetromino::I => match (self.rotation, new_rotation) {
-                (State::Up, State::Right) | (State::Right, State::Up) => {
-                    if clockwise {
-                        vec![
-                            origin.move_dir(State::Left, 1),
-                            origin.move_dir(State::Left, 1),
-                        ]
+                // Clockwise from origin state/Counter-Clockwise to the origin state
+                (State::Up, State::Right) | (State::Right, State::Up) => vec![
+                    origin.move_dir(left_cw, 2),
+                    origin.move_dir(right_cw, 1),
+                    if let Some(x) = origin.move_dir(left_cw, 2) {
+                        x.move_dir(up_cw, 1)
                     } else {
-                        vec![origin.move_dir(State::Right, 1)]
-                    }
-                }
-                (State::Right, State::Down) | (State::Down, State::Right) => vec![],
-                (State::Down, State::Left) | (State::Left, State::Down) => vec![],
-                (State::Left, State::Up) | (State::Up, State::Left) => vec![],
+                        None
+                    },
+                    if let Some(x) = origin.move_dir(right_cw, 1) {
+                        x.move_dir(down_cw, 2)
+                    } else {
+                        None
+                    },
+                ],
+                // Clockwise from right state/Counter-clockwise to the right state
+                (State::Right, State::Down) | (State::Down, State::Right) => vec![
+                    origin.move_dir(left_cw, 1),
+                    origin.move_dir(right_cw, 2),
+                    if let Some(x) = origin.move_dir(left_cw, 1) {
+                        x.move_dir(down_cw, 2)
+                    } else {
+                        None
+                    },
+                    if let Some(x) = origin.move_dir(right_cw, 2) {
+                        x.move_dir(up_cw, 1)
+                    } else {
+                        None
+                    },
+                ],
+                // Clockwise from inverted origin/Count-clockwise to inverted origin
+                (State::Down, State::Left) | (State::Left, State::Down) => vec![
+                    origin.move_dir(right_cw, 2),
+                    origin.move_dir(left_cw, 1),
+                    if let Some(x) = origin.move_dir(right_cw, 2) {
+                        x.move_dir(down_cw, 1)
+                    } else {
+                        None
+                    },
+                    if let Some(x) = origin.move_dir(left_cw, 1) {
+                        x.move_dir(up_cw, 2)
+                    } else {
+                        None
+                    },
+                ],
+                // Clockwise from left state/Counter-clockwise to left state.
+                (State::Left, State::Up) | (State::Up, State::Left) => vec![
+                    origin.move_dir(right_cw, 1),
+                    origin.move_dir(left_cw, 2),
+                    if let Some(x) = origin.move_dir(right_cw, 1) {
+                        x.move_dir(up_cw, 2)
+                    } else {
+                        None
+                    },
+                    if let Some(x) = origin.move_dir(left_cw, 2) {
+                        x.move_dir(down_cw, 1)
+                    } else {
+                        None
+                    },
+                ],
                 _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
             },
             _ => todo!(),
