@@ -286,32 +286,32 @@ impl ActivePiece {
         let new_rotation = self.rotation.rotate(clockwise);
         // We extend our possible tests with the 4 additional tests:
         let origin = self.origin;
-        // This is for internal logic for the fact that rotational states are identical
-        // whether they are cw/ccw, but they have negative vals swapped. This allows for a more
-        // idiomatic way of handling rotation states (maximum of 4 matches rather than 16).
-        // Handling the fact that numbers are identical whether cw/ccw, but the dirs are
-        // swapped.
+        // Extending the tests with the possible tests we have.
         tests.extend(match self.tetromino {
             Tetromino::O => return, /* O Tetromino's have no rotational logic. */
             Tetromino::I => match (self.rotation, new_rotation) {
+                // CW from Spawn State OR CCW to Inverted Spawn State
                 (State::Up, State::Right) | (State::Left, State::Down) => vec![
                     origin.try_move(-2, 0),
                     origin.try_move(1, 0),
                     origin.try_move(-2, 1),
                     origin.try_move(1, -2),
                 ],
+                // CCW to Spawn State OR CW from Inverted Spawn State
                 (State::Right, State::Up) | (State::Down, State::Left) => vec![
                     origin.try_move(2, 0),
                     origin.try_move(-1, 0),
                     origin.try_move(2, -1),
                     origin.try_move(-1, 2),
                 ],
+                // CW to Inverted Spawn State OR CCW from Spawn State
                 (State::Right, State::Down) | (State::Up, State::Left) => vec![
                     origin.try_move(-1, 0),
                     origin.try_move(2, 0),
                     origin.try_move(-1, -2),
                     origin.try_move(2, 1),
                 ],
+                // CCW to Inverted Spawn State OR CW to Spawn State
                 (State::Down, State::Right) | (State::Left, State::Up) => vec![
                     origin.try_move(1, 0),
                     origin.try_move(-2, 0),
@@ -321,24 +321,28 @@ impl ActivePiece {
                 _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
             },
             _ => match (self.rotation, new_rotation) {
+                // CW from Spawn State OR CCW to Inverted Spawn State
                 (State::Up, State::Right) | (State::Down, State::Right) => vec![
                     origin.try_move(-1, 0),
                     origin.try_move(-1, -1),
                     origin.try_move(0, 2),
                     origin.try_move(-1, 2),
                 ],
+                // CCW to Spawn State OR CW from Inverted Spawn State
                 (State::Right, State::Up) | (State::Right, State::Down) => vec![
                     origin.try_move(1, 0),
                     origin.try_move(1, 1),
                     origin.try_move(0, -2),
                     origin.try_move(1, -2),
                 ],
+                // CW from Inverted Spawn State OR CW to Spawn State
                 (State::Down, State::Left) | (State::Left, State::Up) => vec![
                     origin.try_move(1, 0),
                     origin.try_move(1, -1),
                     origin.try_move(0, 2),
                     origin.try_move(1, 2),
                 ],
+                // CCW to Inverted Spawn State OR CCW from Spawn State
                 (State::Left, State::Down) | (State::Up, State::Left) => vec![
                     origin.try_move(-1, 0),
                     origin.try_move(-1, 1),
