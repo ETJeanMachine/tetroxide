@@ -334,14 +334,16 @@ impl ActivePiece {
             .flat_map(|(x, y)| origin.try_move(x, y)),
         );
         // Attempting all of our tests.
-        for pos in tests {
-            let new_state = ActivePiece {
-                tetromino: self.tetromino,
-                origin: pos,
-                rotation: new_rotation,
-            };
+        for new_pos in tests {
             // Returning if we've successfully validated a given state!
-            if self.validate(&new_state, board) {
+            if self.validate(
+                &ActivePiece {
+                    tetromino: self.tetromino,
+                    origin: new_pos,
+                    rotation: new_rotation,
+                },
+                board,
+            ) {
                 return;
             }
         }
