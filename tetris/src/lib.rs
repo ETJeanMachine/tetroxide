@@ -286,72 +286,50 @@ impl ActivePiece {
         let new_rotation = self.rotation.rotate(clockwise);
         // We extend our possible tests with the 4 additional tests:
         let origin = self.origin;
+        // "Kick data" refers to the possible offset values that can be used for the 4 kick states.
+        // There are 8 total different offset value sets; 4 of which are inverted from the other 4.
+        let kick_data_i1 = vec![(-2, 0), (1, 0), (-2, -1), (1, -2)];
+        let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)]; /* Refers to the I Tetromino. */
+        let kick_data_1 = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
+        let kick_data_2 = vec![(1, 0), (1, -1), (0, 2), (1, 2)]; /* Refers to the other 5 (non-O) Tetrominos. */
         // Extending the tests with the possible tests we have.
-        tests.extend(match self.tetromino {
-            Tetromino::O => return, /* O Tetromino's have no rotational logic. */
-            Tetromino::I => match (self.rotation, new_rotation) {
-                // CW from Spawn State OR CCW to Inverted Spawn State
-                (State::Up, State::Right) | (State::Left, State::Down) => vec![
-                    origin.try_move(-2, 0),
-                    origin.try_move(1, 0),
-                    origin.try_move(-2, 1),
-                    origin.try_move(1, -2),
-                ],
-                // CCW to Spawn State OR CW from Inverted Spawn State
-                (State::Right, State::Up) | (State::Down, State::Left) => vec![
-                    origin.try_move(2, 0),
-                    origin.try_move(-1, 0),
-                    origin.try_move(2, -1),
-                    origin.try_move(-1, 2),
-                ],
-                // CW to Inverted Spawn State OR CCW from Spawn State
-                (State::Right, State::Down) | (State::Up, State::Left) => vec![
-                    origin.try_move(-1, 0),
-                    origin.try_move(2, 0),
-                    origin.try_move(-1, -2),
-                    origin.try_move(2, 1),
-                ],
-                // CCW to Inverted Spawn State OR CW to Spawn State
-                (State::Down, State::Right) | (State::Left, State::Up) => vec![
-                    origin.try_move(1, 0),
-                    origin.try_move(-2, 0),
-                    origin.try_move(1, 2),
-                    origin.try_move(-2, -1),
-                ],
-                _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
-            },
-            _ => match (self.rotation, new_rotation) {
-                // CW from Spawn State OR CCW to Inverted Spawn State
-                (State::Up, State::Right) | (State::Down, State::Right) => vec![
-                    origin.try_move(-1, 0),
-                    origin.try_move(-1, -1),
-                    origin.try_move(0, 2),
-                    origin.try_move(-1, 2),
-                ],
-                // CCW to Spawn State OR CW from Inverted Spawn State
-                (State::Right, State::Up) | (State::Right, State::Down) => vec![
-                    origin.try_move(1, 0),
-                    origin.try_move(1, 1),
-                    origin.try_move(0, -2),
-                    origin.try_move(1, -2),
-                ],
-                // CW from Inverted Spawn State OR CW to Spawn State
-                (State::Down, State::Left) | (State::Left, State::Up) => vec![
-                    origin.try_move(1, 0),
-                    origin.try_move(1, -1),
-                    origin.try_move(0, 2),
-                    origin.try_move(1, 2),
-                ],
-                // CCW to Inverted Spawn State OR CCW from Spawn State
-                (State::Left, State::Down) | (State::Up, State::Left) => vec![
-                    origin.try_move(-1, 0),
-                    origin.try_move(-1, 1),
-                    origin.try_move(0, -2),
-                    origin.try_move(-1, -2),
-                ],
-                _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
-            },
-        });
+        tests.extend(
+            match self.tetromino {
+                Tetromino::O => return, /* O Tetromino's have no rotational logic. */
+                Tetromino::I => match (self.rotation, new_rotation) {
+                    // CW from Spawn State OR CCW to Inverted Spawn State
+                    (State::Up, State::Right) | (State::Left, State::Down) => kick_data_i1,
+                    // CCW to Spawn State OR CW from Inverted Spawn State
+                    (State::Right, State::Up) | (State::Down, State::Left) => {
+                        kick_data_i1.iter().map(|(a, b)| (-a, -b)).collect()
+                    }
+                    // CW to Inverted Spawn State OR CCW from Spawn State
+                    (State::Right, State::Down) | (State::Up, State::Left) => kick_data_i2,
+                    // CCW to Inverted Spawn State OR CW to Spawn State
+                    (State::Down, State::Right) | (State::Left, State::Up) => {
+                        kick_data_i2.iter().map(|(a, b)| (-a, -b)).collect()
+                    }
+                    _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
+                },
+                _ => match (self.rotation, new_rotation) {
+                    // CW from Spawn State OR CCW to Inverted Spawn State
+                    (State::Up, State::Right) | (State::Down, State::Right) => kick_data_1,
+                    // CCW to Spawn State OR CW from Inverted Spawn State
+                    (State::Right, State::Up) | (State::Right, State::Down) => {
+                        kick_data_1.iter().map(|(a, b)| (-a, -b)).collect()
+                    }
+                    // CW from Inverted Spawn State OR CW to Spawn State
+                    (State::Down, State::Left) | (State::Left, State::Up) => kick_data_2,
+                    // CCW to Inverted Spawn State OR CCW from Spawn State
+                    (State::Left, State::Down) | (State::Up, State::Left) => {
+                        kick_data_2.iter().map(|(a, b)| (-a, -b)).collect()
+                    }
+                    _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
+                },
+            }
+            .iter()
+            .map(|(x, y)| origin.try_move(*x, *y)),
+        );
         // Attempting all of our tests.
         for test in tests {
             if let Some(pos) = test {
