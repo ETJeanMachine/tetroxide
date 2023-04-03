@@ -281,7 +281,7 @@ impl ActivePiece {
     /// can be successfully done.
     fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) {
         // These are the different "origin" states we will be testing.
-        let mut tests = vec![Some(self.origin)];
+        let mut tests = vec![self.origin];
         // Adding the other 4 tests (wall-kicks).
         let new_rotation = self.rotation.rotate(clockwise);
         // We extend our possible tests with the 4 additional tests:
@@ -331,10 +331,10 @@ impl ActivePiece {
                 },
             }
             .into_iter()
-            .map(|(x, y)| origin.try_move(x, y)),
+            .flat_map(|(x, y)| origin.try_move(x, y)),
         );
         // Attempting all of our tests.
-        for pos in tests.into_iter().flatten() {
+        for pos in tests {
             let new_state = ActivePiece {
                 tetromino: self.tetromino,
                 origin: pos,
