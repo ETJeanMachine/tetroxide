@@ -292,8 +292,7 @@ impl ActivePiece {
         let kick_data_i1 = vec![(-2, 0), (1, 0), (-2, -1), (1, -2)];
         let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)];
         // Refers to the other 5 (non-O) Tetrominos.
-        let kick_data_1 = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
-        let kick_data_2 = vec![(1, 0), (1, -1), (0, 2), (1, 2)];
+        let kick_data = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
         // Extending the tests with the possible tests we have.
         tests.extend(
             match self.tetromino {
@@ -303,28 +302,30 @@ impl ActivePiece {
                     (State::Up, State::Right) | (State::Left, State::Down) => kick_data_i1,
                     // CCW to Spawn State OR CW from Inverted Spawn State
                     (State::Right, State::Up) | (State::Down, State::Left) => {
-                        kick_data_i1.iter().map(|(a, b)| (-a, -b)).collect()
+                        kick_data_i1.iter().map(|(x, y)| (-x, -y)).collect()
                     }
                     // CW to Inverted Spawn State OR CCW from Spawn State
                     (State::Right, State::Down) | (State::Up, State::Left) => kick_data_i2,
                     // CCW to Inverted Spawn State OR CW to Spawn State
                     (State::Down, State::Right) | (State::Left, State::Up) => {
-                        kick_data_i2.iter().map(|(a, b)| (-a, -b)).collect()
+                        kick_data_i2.iter().map(|(x, y)| (-x, -y)).collect()
                     }
                     _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
                 },
                 _ => match (self.rotation, new_rotation) {
                     // CW from Spawn State OR CCW to Inverted Spawn State
-                    (State::Up, State::Right) | (State::Down, State::Right) => kick_data_1,
+                    (State::Up, State::Right) | (State::Down, State::Right) => kick_data,
                     // CCW to Spawn State OR CW from Inverted Spawn State
                     (State::Right, State::Up) | (State::Right, State::Down) => {
-                        kick_data_1.iter().map(|(a, b)| (-a, -b)).collect()
+                        kick_data.iter().map(|(a, b)| (-a, -b)).collect()
                     }
                     // CW from Inverted Spawn State OR CW to Spawn State
-                    (State::Down, State::Left) | (State::Left, State::Up) => kick_data_2,
+                    (State::Down, State::Left) | (State::Left, State::Up) => {
+                        kick_data.iter().map(|(x, y)| (-x, *y)).collect()
+                    }
                     // CCW to Inverted Spawn State OR CCW from Spawn State
                     (State::Left, State::Down) | (State::Up, State::Left) => {
-                        kick_data_2.iter().map(|(a, b)| (-a, -b)).collect()
+                        kick_data.iter().map(|(a, b)| (*a, -b)).collect()
                     }
                     _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
                 },
