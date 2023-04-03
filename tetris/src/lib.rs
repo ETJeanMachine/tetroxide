@@ -101,39 +101,12 @@ impl Pos {
     fn coords(&self) -> (usize, usize) {
         (self.0, self.1)
     }
-    fn move_dir(&self, dir: State, n: usize) -> Option<Self> {
-        let (row, col) = self.coords();
-        let (row_i, col_i) = (row as i32, col as i32);
-        let d = n as i32;
-        match dir {
-            State::Up => {
-                if row_i - d >= 0 {
-                    Some(Pos(row - n, col))
-                } else {
-                    None
-                }
-            }
-            State::Right => {
-                if col_i + d <= MAX_COL as i32 {
-                    Some(Pos(row, col + n))
-                } else {
-                    None
-                }
-            }
-            State::Down => {
-                if row_i + d <= MAX_ROW as i32 {
-                    Some(Pos(row + n, col))
-                } else {
-                    None
-                }
-            }
-            State::Left => {
-                if col_i - d >= 0 {
-                    Some(Pos(row, col - n))
-                } else {
-                    None
-                }
-            }
+    fn try_move(&self, x: i32, y: i32) -> Option<Self> {
+        let (row, col) = (self.0 as i32, self.1 as i32);
+        if row + x < 0 || row + x >= MAX_ROW as i32 || col + y < 0 || col + y >= MAX_COL as i32 {
+            None
+        } else {
+            Some(Pos((row - x) as usize, (col - x) as usize))
         }
     }
 }
@@ -313,78 +286,67 @@ impl ActivePiece {
         let new_rotation = self.rotation.rotate(clockwise);
         // We extend our possible tests with the 4 additional tests:
         let origin = self.origin;
+        // This is for internal logic for the fact that rotational states are identical
+        // whether they are cw/ccw, but they have negative vals swapped. This allows for a more
+        // idiomatic way of handling rotation states (maximum of 4 matches rather than 16).
         // Handling the fact that numbers are identical whether cw/ccw, but the dirs are
         // swapped.
-        let left_cw = if clockwise { State::Left } else { State::Right };
-        let right_cw = if clockwise { State::Right } else { State::Left };
-        let up_cw = if clockwise { State::Up } else { State::Down };
-        let down_cw = if clockwise { State::Down } else { State::Up };
         tests.extend(match self.tetromino {
             Tetromino::O => return, /* O Tetromino's have no rotational logic. */
             Tetromino::I => match (self.rotation, new_rotation) {
-                // Clockwise from origin state/Counter-Clockwise to the origin state
-                (State::Up, State::Right) | (State::Right, State::Up) => vec![
-                    origin.move_dir(left_cw, 2),
-                    origin.move_dir(right_cw, 1),
-                    if let Some(x) = origin.move_dir(left_cw, 2) {
-                        x.move_dir(up_cw, 1)
-                    } else {
-                        None
-                    },
-                    if let Some(x) = origin.move_dir(right_cw, 1) {
-                        x.move_dir(down_cw, 2)
-                    } else {
-                        None
-                    },
+                (State::Up, State::Right) | (State::Left, State::Down) => vec![
+                    origin.try_move(-2, 0),
+                    origin.try_move(1, 0),
+                    origin.try_move(-2, 1),
+                    origin.try_move(1, -2),
                 ],
-                // Clockwise from right state/Counter-clockwise to the right state
-                (State::Right, State::Down) | (State::Down, State::Right) => vec![
-                    origin.move_dir(left_cw, 1),
-                    origin.move_dir(right_cw, 2),
-                    if let Some(x) = origin.move_dir(left_cw, 1) {
-                        x.move_dir(down_cw, 2)
-                    } else {
-                        None
-                    },
-                    if let Some(x) = origin.move_dir(right_cw, 2) {
-                        x.move_dir(up_cw, 1)
-                    } else {
-                        None
-                    },
+                (State::Right, State::Up) | (State::Down, State::Left) => vec![
+                    origin.try_move(2, 0),
+                    origin.try_move(-1, 0),
+                    origin.try_move(2, -1),
+                    origin.try_move(-1, 2),
                 ],
-                // Clockwise from inverted origin/Count-clockwise to inverted origin
-                (State::Down, State::Left) | (State::Left, State::Down) => vec![
-                    origin.move_dir(right_cw, 2),
-                    origin.move_dir(left_cw, 1),
-                    if let Some(x) = origin.move_dir(right_cw, 2) {
-                        x.move_dir(down_cw, 1)
-                    } else {
-                        None
-                    },
-                    if let Some(x) = origin.move_dir(left_cw, 1) {
-                        x.move_dir(up_cw, 2)
-                    } else {
-                        None
-                    },
+                (State::Right, State::Down) | (State::Up, State::Left) => vec![
+                    origin.try_move(-1, 0),
+                    origin.try_move(2, 0),
+                    origin.try_move(-1, -2),
+                    origin.try_move(2, 1),
                 ],
-                // Clockwise from left state/Counter-clockwise to left state.
-                (State::Left, State::Up) | (State::Up, State::Left) => vec![
-                    origin.move_dir(right_cw, 1),
-                    origin.move_dir(left_cw, 2),
-                    if let Some(x) = origin.move_dir(right_cw, 1) {
-                        x.move_dir(up_cw, 2)
-                    } else {
-                        None
-                    },
-                    if let Some(x) = origin.move_dir(left_cw, 2) {
-                        x.move_dir(down_cw, 1)
-                    } else {
-                        None
-                    },
+                (State::Down, State::Right) | (State::Left, State::Up) => vec![
+                    origin.try_move(1, 0),
+                    origin.try_move(-2, 0),
+                    origin.try_move(1, 2),
+                    origin.try_move(-2, -1),
                 ],
                 _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
             },
-            _ => todo!(),
+            _ => match (self.rotation, new_rotation) {
+                (State::Up, State::Right) | (State::Down, State::Right) => vec![
+                    origin.try_move(-1, 0),
+                    origin.try_move(-1, -1),
+                    origin.try_move(0, 2),
+                    origin.try_move(-1, 2),
+                ],
+                (State::Right, State::Up) | (State::Right, State::Down) => vec![
+                    origin.try_move(1, 0),
+                    origin.try_move(1, 1),
+                    origin.try_move(0, -2),
+                    origin.try_move(1, -2),
+                ],
+                (State::Down, State::Left) | (State::Left, State::Up) => vec![
+                    origin.try_move(1, 0),
+                    origin.try_move(1, -1),
+                    origin.try_move(0, 2),
+                    origin.try_move(1, 2),
+                ],
+                (State::Left, State::Down) | (State::Up, State::Left) => vec![
+                    origin.try_move(-1, 0),
+                    origin.try_move(-1, 1),
+                    origin.try_move(0, -2),
+                    origin.try_move(-1, -2),
+                ],
+                _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
+            },
         });
         // Attempting all of our tests.
         for test in tests {
