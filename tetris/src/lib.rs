@@ -290,10 +290,10 @@ impl ActivePiece {
         // There are 8 total different offset value sets; 4 of which are inverted from the other 4.
         // Refers to the I Tetromino.
         let kick_data_i1 = vec![(-2, 0), (1, 0), (-2, -1), (1, -2)];
-        let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)]; 
+        let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)];
         // Refers to the other 5 (non-O) Tetrominos.
         let kick_data_1 = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
-        let kick_data_2 = vec![(1, 0), (1, -1), (0, 2), (1, 2)]; 
+        let kick_data_2 = vec![(1, 0), (1, -1), (0, 2), (1, 2)];
         // Extending the tests with the possible tests we have.
         tests.extend(
             match self.tetromino {
