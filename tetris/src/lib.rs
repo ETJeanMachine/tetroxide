@@ -125,147 +125,68 @@ impl ActivePiece {
         }
     }
 
+    /// Gets the positions of the squares that the active piece represents.
+    fn get_squares(&self) -> [Pos; 4] {
+        let (x, y) = (self.origin.0 as i32, self.origin.1 as i32);
+        match self.tetromino {
+            Tetromino::I => match self.rotation {
+                State::Up => [(-1, 0), (0, 0), (1, 0), (2, 0)],
+                State::Right => [(0, -1), (0, 0), (0, 1), (0, 2)],
+                State::Down => [(-2, 0), (-1, 0), (0, 0), (1, 0)],
+                State::Left => [(0, -2), (0, -1), (0, 0), (0, 1)],
+            },
+            Tetromino::O => [(0, -1), (1, -1), (0, 0), (1, 0)],
+            Tetromino::T => match self.rotation {
+                State::Up => [(0, -1), (-1, 0), (0, 0), (1, 0)],
+                State::Right => [(0, -1), (0, 0), (1, 0), (0, 1)],
+                State::Down => [(-1, 0), (0, 0), (1, 0), (0, 1)],
+                State::Left => [(0, -1), (-1, 0), (0, 0), (0, 1)],
+            },
+            Tetromino::J => match self.rotation {
+                State::Up => [(-1, -1), (-1, 0), (0, 0), (1, 0)],
+                State::Right => [(0, -1), (1, -1), (0, 0), (0, 1)],
+                State::Down => [(-1, 0), (0, 0), (1, 0), (1, 1)],
+                State::Left => [(0, 1), (0, 0), (-1, 1), (0, 1)],
+            },
+            Tetromino::L => match self.rotation {
+                State::Up => [(1, -1), (-1, 0), (0, 0), (1, 0)],
+                State::Right => [(0, -1), (0, 0), (0, 1), (1, 1)],
+                State::Down => [(-1, 0), (0, 0), (1, 0), (-1, 1)],
+                State::Left => [(-1, -1), (0, -1), (0, 0), (0, 1)],
+            },
+            Tetromino::S => match self.rotation {
+                State::Up => [(0, -1), (1, -1), (-1, 0), (0, 0)],
+                State::Right => [(0, -1), (0, 0), (1, 0), (1, 1)],
+                State::Down => [(0, 0), (1, 0), (-1, 1), (0, 1)],
+                State::Left => [(-1, -1), (-1, 0), (0, 0), (0, 1)],
+            },
+            Tetromino::Z => match self.rotation {
+                State::Up => [(-1, -1), (0, -1), (0, 0), (1, 0)],
+                State::Right => [(1, -1), (0, -1), (0, 0), (1, 0)],
+                State::Down => [(1, -1), (0, 0), (1, 0), (0, 1)],
+                State::Left => [(0, -1), (-1, 0), (0, 0), (-1, 1)],
+            },
+        }
+        .into_iter()
+        .map(|(a, b)| Pos((x + a) as usize, (y + b) as usize))
+        .collect::<Vec<Pos>>()
+        .try_into()
+        .unwrap()
+    }
+
     /// Validates if a new state that we've passed in is valid within the
     /// board. If it is, we update the state and return true to signify that we
     /// updated.
     fn validate(&mut self, new_state: &ActivePiece, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
-        let x = new_state.origin.0;
-        let y = new_state.origin.1;
-        let valid_pos = match new_state.tetromino {
-            Tetromino::I => match new_state.rotation {
-                State::Up => {
-                    (x > 0 && x < MAX_COL - 2 && y < MAX_ROW)
-                        && (board[x - 1][y] | board[x][y] | board[x + 1][y] | board[x + 2][y]) == 0
-                }
-                State::Right => {
-                    (x < MAX_COL && y > 0 && y < MAX_ROW - 2)
-                        && (board[x][y - 1] | board[x][y] | board[x][y + 1] | board[x][y + 2]) == 0
-                }
-                State::Down => {
-                    (x > 1 && x < MAX_COL - 1 && y < MAX_ROW)
-                        && (board[x - 2][y] | board[x - 1][y] | board[x][y] | board[x + 1][y]) == 0
-                }
-                State::Left => {
-                    (x < MAX_COL && y > 1 && y < MAX_ROW - 1)
-                        && (board[x][y - 2] | board[x][y - 1] | board[x][y] | board[x][y + 1]) == 0
-                }
-            },
-            Tetromino::O => {
-                (x < MAX_COL - 1 && y > 1 && y < MAX_ROW)
-                    && (board[x][y - 1] | board[x + 1][y - 1] | board[x][y] | board[x + 1][y]) == 0
+        for pos in new_state.get_squares() {
+            let (x, y) = pos.coords();
+            if board[x][y] != 0 {
+                return false;
             }
-            Tetromino::T => match new_state.rotation {
-                State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0)
-                        && (board[x][y - 1] | board[x - 1][y] | board[x][y] | board[x + 1][y]) == 0
-                }
-                State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x][y - 1] | board[x][y] | board[x + 1][y] | board[x][y + 1]) == 0
-                }
-                State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
-                        && (board[x - 1][y] | board[x][y] | board[x + 1][y] | board[x][y + 1]) == 0
-                }
-                State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x][y - 1] | board[x - 1][y] | board[x][y] | board[x][y + 1]) == 0
-                }
-            },
-            Tetromino::J => match new_state.rotation {
-                State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0)
-                        && (board[x - 1][y - 1] | board[x - 1][y] | board[x][y] | board[x + 1][y])
-                            == 0
-                }
-                State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x][y - 1] | board[x + 1][y - 1] | board[x][y] | board[x][y + 1])
-                            == 0
-                }
-                State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
-                        && (board[x - 1][y] | board[x][y] | board[x + 1][y] | board[x + 1][y + 1])
-                            == 0
-                }
-                State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x][y + 1] | board[x][y] | board[x - 1][y + 1] | board[x][y + 1])
-                            == 0
-                }
-            },
-            Tetromino::L => match new_state.rotation {
-                State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0)
-                        && (board[x + 1][y - 1] | board[x - 1][y] | board[x][y] | board[x + 1][y])
-                            == 0
-                }
-                State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x][y - 1] | board[x][y] | board[x][y + 1] | board[x + 1][y + 1])
-                            == 0
-                }
-                State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
-                        && (board[x - 1][y] | board[x][y] | board[x + 1][y] | board[x - 1][y + 1])
-                            == 0
-                }
-                State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x - 1][y - 1] | board[x][y - 1] | board[x][y] | board[x][y + 1])
-                            == 0
-                }
-            },
-            Tetromino::S => match new_state.rotation {
-                State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0)
-                        && (board[x][y - 1] | board[x + 1][y - 1] | board[x - 1][y] | board[x][y])
-                            == 0
-                }
-                State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x][y - 1] | board[x][y] | board[x + 1][y] | board[x + 1][y + 1])
-                            == 0
-                }
-                State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
-                        && (board[x][y] | board[x + 1][y] | board[x - 1][y + 1] | board[x][y + 1])
-                            == 0
-                }
-                State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x - 1][y - 1] | board[x - 1][y] | board[x][y] | board[x][y + 1])
-                            == 0
-                }
-            },
-            Tetromino::Z => match new_state.rotation {
-                State::Up => {
-                    (x > 0 && x < MAX_COL - 1 && y > 0)
-                        && (board[x - 1][y - 1] | board[x][y - 1] | board[x][y] | board[x + 1][y])
-                            == 0
-                }
-                State::Right => {
-                    (x < MAX_COL - 1 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x + 1][y - 1] | board[x][y - 1] | board[x][y] | board[x + 1][y])
-                            == 0
-                }
-                State::Down => {
-                    (x > 0 && x < MAX_COL - 1 && y < MAX_ROW - 1)
-                        && (board[x + 1][y - 1] | board[x][y] | board[x + 1][y] | board[x][y + 1])
-                            == 0
-                }
-                State::Left => {
-                    (x > 0 && y > 0 && y < MAX_ROW - 1)
-                        && (board[x][y - 1] | board[x - 1][y] | board[x][y] | board[x - 1][y + 1])
-                            == 0
-                }
-            },
-        };
-        if valid_pos {
-            self.origin = new_state.origin;
-            self.rotation = new_state.rotation;
         }
-        valid_pos
+        self.origin = new_state.origin;
+        self.rotation = new_state.rotation;
+        true
     }
 
     /// Tetris's rotational system is complex. To refer to it, please see
@@ -284,8 +205,6 @@ impl ActivePiece {
         let mut tests = vec![self.origin];
         // Adding the other 4 tests (wall-kicks).
         let new_rotation = self.rotation.rotate(clockwise);
-        // We extend our possible tests with the 4 additional tests:
-        let origin = self.origin;
         // "Kick data" refers to the possible offset values that can be used for the 4 kick states.
         // There are 8 total different offset value sets; 4 of which are inverted from the other 4.
         // Refers to the I Tetromino.
@@ -293,7 +212,7 @@ impl ActivePiece {
         let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)];
         // Refers to the other 5 (non-O) Tetrominos.
         let kick_data = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
-        // Extending the tests with the possible tests we have.
+        // We extend our possible tests with the 4 additional tests:
         tests.extend(
             match self.tetromino {
                 Tetromino::O => return, /* O Tetromino's have no rotational logic. */
@@ -317,7 +236,7 @@ impl ActivePiece {
                     (State::Up, State::Right) | (State::Down, State::Right) => kick_data,
                     // CCW to Spawn State OR CW from Inverted Spawn State
                     (State::Right, State::Up) | (State::Right, State::Down) => {
-                        kick_data.into_iter().map(|(a, b)| (-a, -b)).collect()
+                        kick_data.into_iter().map(|(x, y)| (-x, -y)).collect()
                     }
                     // CW from Inverted Spawn State OR CW to Spawn State
                     (State::Down, State::Left) | (State::Left, State::Up) => {
@@ -325,13 +244,13 @@ impl ActivePiece {
                     }
                     // CCW to Inverted Spawn State OR CCW from Spawn State
                     (State::Left, State::Down) | (State::Up, State::Left) => {
-                        kick_data.into_iter().map(|(a, b)| (a, -b)).collect()
+                        kick_data.into_iter().map(|(x, y)| (x, -y)).collect()
                     }
                     _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
                 },
             }
             .into_iter()
-            .flat_map(|(x, y)| origin.try_move(x, y)),
+            .flat_map(|(x, y)| self.origin.try_move(x, y)),
         );
         // Attempting all of our tests.
         for new_pos in tests {
@@ -349,14 +268,28 @@ impl ActivePiece {
         }
     }
 
-    fn drop(&mut self) {}
-
-    fn hard_drop(&mut self, board: &[[u8; MAX_COL]; MAX_ROW]) {}
+    /// Attempt to move a piece down by 1 pos
+    /// if successful, update active piece position, return `true`
+    /// if not, return `false`
+    fn drop(&mut self, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
+        if let Some(new_pos) = self.origin.try_move(0, 1) {
+            return self.validate(
+                &ActivePiece {
+                    tetromino: self.tetromino,
+                    origin: new_pos,
+                    rotation: self.rotation,
+                },
+                board,
+            );
+        }
+        return false;
+    }
 }
 
 pub struct Tetris {
     board: [[u8; MAX_COL]; MAX_ROW],
     active: ActivePiece,
+    held: Option<Tetromino>,
     queue: VecDeque<Tetromino>,
     bag: Bag,
 }
@@ -382,8 +315,79 @@ impl Tetris {
         Tetris {
             board,
             active,
+            held: None,
             queue,
             bag,
+        }
+    }
+
+    /// Call the active piece's drop() to update its position if possible.
+    /// If not, write piece to game board and draw new piece.
+    pub fn drop(&mut self) {
+        if !self.active.drop(&self.board) {
+            for block_pos in self.active.get_squares() {
+                self.board[block_pos.0][block_pos.1] = 1;
+            }
+    
+            if let Some(next_tet) = self.queue.back() {
+                self.active = ActivePiece {
+                    tetromino: *next_tet,
+                    origin: Pos(19, 4),
+                    rotation: State::Up,
+                };
+            }
+        }
+    }
+
+    /// Call the active piece's rotate()
+    pub fn rotate(&mut self, clockwise: bool) {
+        self.active.rotate(clockwise, &self.board);
+    }
+
+    /// Erase filled rows and move rows above down
+    pub fn clean_board(&mut self) {
+        for y in (0..MAX_ROW).rev() {
+            let mut is_solid = true;
+
+            for x in 0..MAX_COL {
+                if self.board[x][y] == 0 {
+                    is_solid = false;
+                }
+            }
+
+            if is_solid {
+                for z in 0..y {
+                    for x in 0..MAX_COL {
+                        self.board[x][z+1] = self.board[x][z];
+                    }
+                }
+            }
+        }
+    }
+
+    /// Hold functionality
+    /// If no piece is held, place active piece in hold and draw new piece
+    /// If something is held, swap held & active piece
+    pub fn hold(&mut self) {
+        if self.held.is_none() {
+            self.held = Some(self.active.tetromino);
+
+            if let Some(next) = self.queue.back() {
+                self.active = ActivePiece {
+                    tetromino: *next,
+                    origin: Pos(19, 4),
+                    rotation: State::Up
+                };
+            }
+        } else {
+            if let Some(temp_tet) = self.held {
+                self.held = Some(self.active.tetromino);
+                self.active = ActivePiece {
+                    tetromino: temp_tet,
+                    origin: Pos(19, 4),
+                    rotation: State::Up
+                }
+            }
         }
     }
 }
