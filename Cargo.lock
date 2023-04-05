@@ -133,6 +133,9 @@ dependencies = [
 [[package]]
 name = "tetroxide"
 version = "0.1.0"
+dependencies = [
+ "tetris",
+]
 
 [[package]]
 name = "unicode-ident"
