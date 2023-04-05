@@ -501,8 +501,12 @@ pub mod tetris {
                 }
             }
             // Generating the active piece.
+            let (mut min_col, mut max_col) = (11, 0);
             for (row, col) in self.active.get_squares() {
                 let (row, col) = (row as usize, col as usize);
+                // For "ghosting".
+                min_col = min_col.min(col);
+                max_col = max_col.max(col);
                 if row >= 20 {
                     board_render[row - 20][2 * col] = '[';
                     board_render[row - 20][(2 * col) + 1] = ']';
@@ -511,6 +515,7 @@ pub mod tetris {
             // Generating the "Queue" Area
             let mut queue_render = [[' '; 8]; 20];
             let mut ren_row = -1;
+
             for piece in &self.queue {
                 let shape = piece.shape(State::Up);
                 ren_row += if let Tetromino::I = piece { 2 } else { 3 };
@@ -528,7 +533,15 @@ pub mod tetris {
                 let q_render: String = queue_render[row].into_iter().collect();
                 writeln!(f, " {} <!{}!> {} ", h_render, b_render, q_render)?;
             }
-            writeln!(f, "          <!====================!>          ")?;
+            write!(f, "          <!")?;
+            for c in 0..10 {
+                if c >= min_col && c <= max_col {
+                    write!(f, "##")?;
+                } else {
+                    write!(f, "==")?;
+                }
+            }
+            writeln!(f, "!>          ")?;
             writeln!(f, "            \\/\\/\\/\\/\\/\\/\\/\\/\\/\\/            ")?;
             Ok(())
         }
