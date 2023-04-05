@@ -2,6 +2,7 @@ pub mod tetris {
     use rand::seq::SliceRandom;
     use rand::thread_rng;
     use std::collections::VecDeque;
+    use std::fmt::Display;
     use strum::IntoEnumIterator;
     use strum_macros::EnumIter;
 
@@ -16,7 +17,7 @@ pub mod tetris {
     /// - `L`/`J` Pieces.
     /// - `S`/`Z` Pieces, also called "skew".
     #[derive(Debug, Clone, Copy, EnumIter)]
-    pub enum Tetromino {
+    enum Tetromino {
         I,
         O,
         T,
@@ -24,6 +25,51 @@ pub mod tetris {
         L,
         S,
         Z,
+    }
+    impl Tetromino {
+        /// Gives the "shape" of a tetromino, given the default origin state is
+        /// at (0, 0).
+        fn shape(&self, rotation: State) -> [(i32, i32); 4] {
+            match self {
+                Tetromino::I => match rotation {
+                    State::Up => [(-1, 0), (0, 0), (1, 0), (2, 0)],
+                    State::Right => [(0, -1), (0, 0), (0, 1), (0, 2)],
+                    State::Down => [(-2, 0), (-1, 0), (0, 0), (1, 0)],
+                    State::Left => [(0, -2), (0, -1), (0, 0), (0, 1)],
+                },
+                Tetromino::O => [(0, -1), (1, -1), (0, 0), (1, 0)],
+                Tetromino::T => match rotation {
+                    State::Up => [(0, -1), (-1, 0), (0, 0), (1, 0)],
+                    State::Right => [(0, -1), (0, 0), (1, 0), (0, 1)],
+                    State::Down => [(-1, 0), (0, 0), (1, 0), (0, 1)],
+                    State::Left => [(0, -1), (-1, 0), (0, 0), (0, 1)],
+                },
+                Tetromino::J => match rotation {
+                    State::Up => [(-1, -1), (-1, 0), (0, 0), (1, 0)],
+                    State::Right => [(0, -1), (1, -1), (0, 0), (0, 1)],
+                    State::Down => [(-1, 0), (0, 0), (1, 0), (1, 1)],
+                    State::Left => [(0, 1), (0, 0), (-1, 1), (0, 1)],
+                },
+                Tetromino::L => match rotation {
+                    State::Up => [(1, -1), (-1, 0), (0, 0), (1, 0)],
+                    State::Right => [(0, -1), (0, 0), (0, 1), (1, 1)],
+                    State::Down => [(-1, 0), (0, 0), (1, 0), (-1, 1)],
+                    State::Left => [(-1, -1), (0, -1), (0, 0), (0, 1)],
+                },
+                Tetromino::S => match rotation {
+                    State::Up => [(0, -1), (1, -1), (-1, 0), (0, 0)],
+                    State::Right => [(0, -1), (0, 0), (1, 0), (1, 1)],
+                    State::Down => [(0, 0), (1, 0), (-1, 1), (0, 1)],
+                    State::Left => [(-1, -1), (-1, 0), (0, 0), (0, 1)],
+                },
+                Tetromino::Z => match rotation {
+                    State::Up => [(-1, -1), (0, -1), (0, 0), (1, 0)],
+                    State::Right => [(1, -1), (0, -1), (0, 0), (1, 0)],
+                    State::Down => [(1, -1), (0, 0), (1, 0), (0, 1)],
+                    State::Left => [(0, -1), (-1, 0), (0, 0), (-1, 1)],
+                },
+            }
+        }
     }
     impl Into<u8> for Tetromino {
         fn into(self) -> u8 {
@@ -117,11 +163,11 @@ pub mod tetris {
         }
         pub fn try_move(&self, x: i32, y: i32) -> Option<Self> {
             let (row, col) = (self.0 as i32, self.1 as i32);
-            if row + x < 0 || row + x >= MAX_ROW as i32 || col + y < 0 || col + y >= MAX_COL as i32
+            if row + y < 0 || row + y >= MAX_ROW as i32 || col + x < 0 || col + x >= MAX_COL as i32
             {
                 None
             } else {
-                Some(Pos((row - x) as usize, (col - x) as usize))
+                Some(Pos((row + y) as usize, (col + x) as usize))
             }
         }
     }
@@ -142,51 +188,14 @@ pub mod tetris {
 
         /// Gets the positions of the squares that the active piece represents.
         fn get_squares(&self) -> [Pos; 4] {
-            let (x, y) = (self.origin.0 as i32, self.origin.1 as i32);
-            match self.tetromino {
-                Tetromino::I => match self.rotation {
-                    State::Up => [(-1, 0), (0, 0), (1, 0), (2, 0)],
-                    State::Right => [(0, -1), (0, 0), (0, 1), (0, 2)],
-                    State::Down => [(-2, 0), (-1, 0), (0, 0), (1, 0)],
-                    State::Left => [(0, -2), (0, -1), (0, 0), (0, 1)],
-                },
-                Tetromino::O => [(0, -1), (1, -1), (0, 0), (1, 0)],
-                Tetromino::T => match self.rotation {
-                    State::Up => [(0, -1), (-1, 0), (0, 0), (1, 0)],
-                    State::Right => [(0, -1), (0, 0), (1, 0), (0, 1)],
-                    State::Down => [(-1, 0), (0, 0), (1, 0), (0, 1)],
-                    State::Left => [(0, -1), (-1, 0), (0, 0), (0, 1)],
-                },
-                Tetromino::J => match self.rotation {
-                    State::Up => [(-1, -1), (-1, 0), (0, 0), (1, 0)],
-                    State::Right => [(0, -1), (1, -1), (0, 0), (0, 1)],
-                    State::Down => [(-1, 0), (0, 0), (1, 0), (1, 1)],
-                    State::Left => [(0, 1), (0, 0), (-1, 1), (0, 1)],
-                },
-                Tetromino::L => match self.rotation {
-                    State::Up => [(1, -1), (-1, 0), (0, 0), (1, 0)],
-                    State::Right => [(0, -1), (0, 0), (0, 1), (1, 1)],
-                    State::Down => [(-1, 0), (0, 0), (1, 0), (-1, 1)],
-                    State::Left => [(-1, -1), (0, -1), (0, 0), (0, 1)],
-                },
-                Tetromino::S => match self.rotation {
-                    State::Up => [(0, -1), (1, -1), (-1, 0), (0, 0)],
-                    State::Right => [(0, -1), (0, 0), (1, 0), (1, 1)],
-                    State::Down => [(0, 0), (1, 0), (-1, 1), (0, 1)],
-                    State::Left => [(-1, -1), (-1, 0), (0, 0), (0, 1)],
-                },
-                Tetromino::Z => match self.rotation {
-                    State::Up => [(-1, -1), (0, -1), (0, 0), (1, 0)],
-                    State::Right => [(1, -1), (0, -1), (0, 0), (1, 0)],
-                    State::Down => [(1, -1), (0, 0), (1, 0), (0, 1)],
-                    State::Left => [(0, -1), (-1, 0), (0, 0), (-1, 1)],
-                },
-            }
-            .into_iter()
-            .map(|(a, b)| Pos((x + a) as usize, (y + b) as usize))
-            .collect::<Vec<Pos>>()
-            .try_into()
-            .unwrap()
+            let (y, x) = (self.origin.0 as i32, self.origin.1 as i32);
+            self.tetromino
+                .shape(self.rotation)
+                .into_iter()
+                .map(|(a, b)| Pos((y + b) as usize, (x + a) as usize))
+                .collect::<Vec<Pos>>()
+                .try_into()
+                .unwrap()
         }
 
         /// Validates if a new state that we've passed in is valid within the
@@ -194,8 +203,8 @@ pub mod tetris {
         /// updated.
         fn validate(&mut self, new_state: &ActivePiece, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
             for pos in new_state.get_squares() {
-                let (x, y) = pos.coords();
-                if board[x][y] != 0 {
+                let (row, col) = pos.coords();
+                if board[row][col] != 0 {
                     return false;
                 }
             }
@@ -319,8 +328,8 @@ pub mod tetris {
         board: [[u8; MAX_COL]; MAX_ROW],
         active: ActivePiece,
         bag: Bag,
-        pub held: Option<Tetromino>,
-        pub queue: VecDeque<Tetromino>,
+        held: Option<Tetromino>,
+        queue: VecDeque<Tetromino>,
         pub is_game_over: bool,
     }
     impl Tetris {
@@ -435,15 +444,63 @@ pub mod tetris {
                 }
             }
         }
-
-        /// Returns a read-only 40x20 array of the board.
-        pub fn get_board(&self) -> [[u8; MAX_COL]; MAX_ROW] {
-            let mut clone = self.board.clone();
-            for pos in self.active.get_squares() {
-                let (x, y) = pos.coords();
-                clone[x][y] = self.active.tetromino as u8;
+    }
+    impl Display for Tetris {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            // Generating the "Held" Area
+            let mut held_render = [[' '; 8]; 20];
+            if let Some(held) = self.held {
+                let shape = held.shape(State::Up);
+                for (x, y) in shape {
+                    let (r, c) = ((2 + y) as usize, ((2 + (x * 2)) as usize));
+                    held_render[r][c] = '[';
+                    held_render[r][c + 1] = ']';
+                }
             }
-            clone
+            // Generating the gameboard area
+            let mut board_render = [[' '; MAX_COL * 2]; 20];
+            for row in 0..20 {
+                for col in 0..MAX_COL {
+                    if self.board[row + 20][col] == 0 {
+                        board_render[row][2 * col] = ' ';
+                        board_render[row][(2 * col) + 1] = '.';
+                    } else {
+                        board_render[row][2 * col] = '[';
+                        board_render[row][(2 * col) + 1] = ']';
+                    }
+                }
+            }
+            // Generating the active piece.
+            for pos in self.active.get_squares() {
+                let (row, col) = pos.coords();
+                if row >= 19 {
+                    board_render[row - 19][2 * col] = '[';
+                    board_render[row - 19][(2 * col) + 1] = ']';
+                }
+            }
+            // Generating the "Queue" Area
+            let mut queue_render = [[' '; 8]; 20];
+            let mut ren_row = 2;
+            for piece in &self.queue {
+                let shape = piece.shape(State::Up);
+                for (x, y) in shape {
+                    let (r, c) = ((ren_row + y) as usize, ((2 + (x * 2)) as usize));
+                    queue_render[r][c] = '[';
+                    queue_render[r][c + 1] = ']';
+                }
+                ren_row += 3;
+            }
+            // Rendering our generated info.
+            writeln!(f, "   HELD                              NEXT   ")?;
+            for row in 0..20 {
+                let h_render: String = held_render[row].into_iter().collect();
+                let b_render: String = board_render[row].into_iter().collect();
+                let q_render: String = queue_render[row].into_iter().collect();
+                writeln!(f, " {} <!{}!> {} ", h_render, b_render, q_render)?;
+            }
+            writeln!(f, "          <!====================!>          ")?;
+            writeln!(f, "            \\/\\/\\/\\/\\/\\/\\/\\/\\/\\/            ")?;
+            Ok(())
         }
     }
 }
