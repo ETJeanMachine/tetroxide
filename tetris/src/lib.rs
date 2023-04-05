@@ -163,7 +163,8 @@ pub mod tetris {
         }
         pub fn try_move(&self, x: i32, y: i32) -> Option<Self> {
             let (row, col) = (self.0 as i32, self.1 as i32);
-            if row + y < 0 || row + y >= MAX_ROW as i32 || col + x < 0 || col + x >= MAX_COL as i32 {
+            if row + y < 0 || row + y >= MAX_ROW as i32 || col + x < 0 || col + x >= MAX_COL as i32
+            {
                 None
             } else {
                 Some(Pos((row + y) as usize, (col + x) as usize))
@@ -429,6 +430,10 @@ pub mod tetris {
         /// Call the active piece's rotate()
         pub fn rotate(&mut self, clockwise: bool) {
             self.active.rotate(clockwise, &self.board);
+        }
+
+        pub fn shift(&mut self, left: bool) {
+            self.active.shift(left, &self.board);
         }
 
         /// Erase filled rows and move rows above down
