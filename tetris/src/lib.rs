@@ -1,4 +1,4 @@
-mod tetris {
+pub mod tetris {
     use rand::seq::SliceRandom;
     use rand::thread_rng;
     use std::collections::VecDeque;
@@ -369,6 +369,16 @@ mod tetris {
             }
         }
 
+        /// Return the next piece in the queue and pull a new piece 
+        /// from the bag to replace it
+        fn next_piece(&mut self) -> Option<Tetromino> {
+            if let Some(tet) = self.bag.next() {
+                self.queue.push_back(tet);
+            }
+
+            self.queue.pop_front()
+        }
+
         /// Call the active piece's drop() to update its position if possible.
         /// If not, write piece to game board and draw new piece.
         pub fn drop(&mut self) {
@@ -381,9 +391,9 @@ mod tetris {
                     self.board[row][col] = 1;
                 }
 
-                if let Some(next_tet) = self.queue.back() {
+                if let Some(next_tet) = self.next_piece() {
                     self.active = ActivePiece {
-                        tetromino: *next_tet,
+                        tetromino: next_tet,
                         origin: Pos(19, 4),
                         rotation: State::Up,
                     };
@@ -397,7 +407,7 @@ mod tetris {
         }
 
         /// Erase filled rows and move rows above down
-        pub fn clear_board(&mut self) {
+        pub fn clean_board(&mut self) {
             for y in (0..MAX_ROW).rev() {
                 let mut is_solid = true;
 
@@ -424,9 +434,9 @@ mod tetris {
             if self.held.is_none() {
                 self.held = Some(self.active.tetromino);
 
-                if let Some(next) = self.queue.back() {
+                if let Some(next) = self.next_piece() {
                     self.active = ActivePiece {
-                        tetromino: *next,
+                        tetromino: next,
                         origin: Pos(19, 4),
                         rotation: State::Up,
                     };
@@ -441,27 +451,6 @@ mod tetris {
                     }
                 }
             }
-        }
-    }
-}
-
-mod game {
-    use crate::tetris::Tetris;
-    use std::thread;
-
-    enum Inputs {
-        RotateCcw,
-        RotateCw,
-        HardDrop,
-        Drop,
-        Left,
-        Right,
-    }
-
-    pub struct Game(Tetris);
-    impl Game {
-        fn new() -> Self {
-            Game(Tetris::new())
         }
     }
 }
