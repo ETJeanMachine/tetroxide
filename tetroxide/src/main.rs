@@ -1,3 +1,7 @@
+use tetroxide::tetroxide::Game;
+
 fn main() {
-    println!("Hello, world!");
+    let mut tet = Game::new();
+    tet.run();
 }
+

@@ -412,7 +412,7 @@ pub mod tetris {
                 let mut is_solid = true;
 
                 for x in 0..MAX_COL {
-                    if self.board[x][y] == 0 {
+                    if self.board[y][x] == 0 {
                         is_solid = false;
                     }
                 }
@@ -420,7 +420,7 @@ pub mod tetris {
                 if is_solid {
                     for z in 0..y {
                         for x in 0..MAX_COL {
-                            self.board[x][z + 1] = self.board[x][z];
+                            self.board[z + 1][x] = self.board[z][x];
                         }
                     }
                 }
