@@ -18,13 +18,13 @@ pub mod tetris {
     /// - `S`/`Z` Pieces, also called "skew".
     #[derive(Debug, Clone, Copy, EnumIter)]
     enum Tetromino {
-        I,
-        O,
-        T,
-        J,
-        L,
-        S,
-        Z,
+        I = 1,
+        O = 2,
+        T = 3,
+        J = 4,
+        L = 5,
+        S = 6,
+        Z = 7,
     }
     impl Tetromino {
         /// Gives the "shape" of a tetromino, given the default origin state is
@@ -412,7 +412,7 @@ pub mod tetris {
 
         pub fn hard_drop(&mut self) {
             while self.active.drop(&self.board) {}
-            
+
             for (row, col) in self.active.get_squares() {
                 if row < 20 {
                     self.is_game_over = true;
