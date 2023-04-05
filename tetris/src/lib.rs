@@ -163,15 +163,14 @@ pub mod tetris {
         }
         pub fn try_move(&self, x: i32, y: i32) -> Option<Self> {
             let (row, col) = (self.0 as i32, self.1 as i32);
-            if row + y < 0 || row + y >= MAX_ROW as i32 || col + x < 0 || col + x >= MAX_COL as i32
-            {
+            if row + y < 0 || row + y >= MAX_ROW as i32 || col + x < 0 || col + x >= MAX_COL as i32 {
                 None
             } else {
                 Some(Pos((row + y) as usize, (col + x) as usize))
             }
         }
         pub fn in_range(row: i32, col: i32) -> bool {
-            return row >= 0 || row < MAX_ROW as i32 || col >= 0 || col < MAX_COL as i32;
+            return row >= 0 && row < MAX_ROW as i32 && col >= 0 && col < MAX_COL as i32;
         }
     }
 
@@ -184,19 +183,19 @@ pub mod tetris {
         fn new(tetromino: Tetromino) -> Self {
             ActivePiece {
                 tetromino,
-                origin: Pos::new(19, 4),
+                origin: Pos::new(20, 4),
                 rotation: State::Up,
             }
         }
 
         /// Gets the positions of the squares that the active piece represents.
-        fn get_squares(&self) -> [Pos; 4] {
+        fn get_squares(&self) -> [(i32, i32); 4] {
             let (y, x) = (self.origin.0 as i32, self.origin.1 as i32);
             self.tetromino
                 .shape(self.rotation)
                 .into_iter()
-                .map(|(a, b)| Pos((y + b) as usize, (x + a) as usize))
-                .collect::<Vec<Pos>>()
+                .map(|(a, b)| (y + b, x + a))
+                .collect::<Vec<(i32, i32)>>()
                 .try_into()
                 .unwrap()
         }
@@ -205,9 +204,11 @@ pub mod tetris {
         /// board. If it is, we update the state and return true to signify that we
         /// updated.
         fn validate(&mut self, new_state: &ActivePiece, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
-            for pos in new_state.get_squares() {
-                let (row, col) = pos.coords();
-                if board[row][col] != 0 {
+            for (row, col) in new_state.get_squares() {
+                if !Pos::in_range(row, col) {
+                    return false;
+                }
+                if board[row as usize][col as usize] != 0 {
                     return false;
                 }
             }
@@ -397,20 +398,14 @@ pub mod tetris {
         /// If not, write piece to game board and draw new piece.
         pub fn drop(&mut self) {
             if !self.active.drop(&self.board) {
-                for block_pos in self.active.get_squares() {
-                    let (row, col) = block_pos.coords();
-                    if row < 19 {
+                for (row, col) in self.active.get_squares() {
+                    if row < 20 {
                         self.is_game_over = true;
                     }
-                    self.board[row][col] = self.active.tetromino as u8;
+                    self.board[row as usize][col as usize] = self.active.tetromino as u8;
                 }
-
                 if let Some(next_tet) = self.next_piece() {
-                    self.active = ActivePiece {
-                        tetromino: next_tet,
-                        origin: Pos(19, 4),
-                        rotation: State::Up,
-                    };
+                    self.active = ActivePiece::new(next_tet);
                 }
             }
         }
@@ -449,20 +444,12 @@ pub mod tetris {
                 self.held = Some(self.active.tetromino);
 
                 if let Some(next) = self.next_piece() {
-                    self.active = ActivePiece {
-                        tetromino: next,
-                        origin: Pos(19, 4),
-                        rotation: State::Up,
-                    };
+                    self.active = ActivePiece::new(next);
                 }
             } else {
                 if let Some(temp_tet) = self.held {
                     self.held = Some(self.active.tetromino);
-                    self.active = ActivePiece {
-                        tetromino: temp_tet,
-                        origin: Pos(19, 4),
-                        rotation: State::Up,
-                    }
+                    self.active = ActivePiece::new(temp_tet);
                 }
             }
         }
@@ -493,11 +480,11 @@ pub mod tetris {
                 }
             }
             // Generating the active piece.
-            for pos in self.active.get_squares() {
-                let (row, col) = pos.coords();
-                if row >= 19 {
-                    board_render[row - 19][2 * col] = '[';
-                    board_render[row - 19][(2 * col) + 1] = ']';
+            for (row, col) in self.active.get_squares() {
+                let (row, col) = (row as usize, col as usize);
+                if row >= 20 {
+                    board_render[row - 20][2 * col] = '[';
+                    board_render[row - 20][(2 * col) + 1] = ']';
                 }
             }
             // Generating the "Queue" Area
