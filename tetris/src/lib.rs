@@ -170,6 +170,9 @@ pub mod tetris {
                 Some(Pos((row + y) as usize, (col + x) as usize))
             }
         }
+        pub fn in_range(row: i32, col: i32) -> bool {
+            return row >= 0 || row < MAX_ROW as i32 || col >= 0 || col < MAX_COL as i32;
+        }
     }
 
     struct ActivePiece {
@@ -225,10 +228,21 @@ pub mod tetris {
         /// clockwise/counter-clockwise, and performs the rotation on itself if it
         /// can be successfully done.
         fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) {
-            // These are the different "origin" states we will be testing.
-            let mut tests = vec![self.origin];
-            // Adding the other 4 tests (wall-kicks).
+            // Getting our new rotational state.
             let new_rotation = self.rotation.rotate(clockwise);
+            let (row, col) = (self.origin.0 as i32, self.origin.1 as i32);
+            // These are the different "origin" states we will be testing.
+            let origin = if let Tetromino::I = self.tetromino {
+                match (clockwise, new_rotation) {
+                    (true, State::Up) | (false, State::Right) => (row - 1, col),
+                    (true, State::Right) | (false, State::Down) => (row, col + 1),
+                    (true, State::Down) | (false, State::Left) => (row + 1, col),
+                    (true, State::Left) | (false, State::Up) => (row, col - 1),
+                }
+            } else {
+                (row, col)
+            };
+            let mut origins = vec![origin];
             // "Kick data" refers to the possible offset values that can be used for the 4 kick states.
             // There are 8 total different offset value sets; 4 of which are inverted from the other 4.
             // Refers to the I Tetromino.
@@ -237,7 +251,7 @@ pub mod tetris {
             // Refers to the other 5 (non-O) Tetrominos.
             let kick_data = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
             // We extend our possible tests with the 4 additional tests:
-            tests.extend(
+            origins.extend(
                 match self.tetromino {
                     Tetromino::O => return, /* O Tetromino's have no rotational logic. */
                     Tetromino::I => match (self.rotation, new_rotation) {
@@ -274,8 +288,16 @@ pub mod tetris {
                     },
                 }
                 .into_iter()
-                .flat_map(|(x, y)| self.origin.try_move(x, y)),
+                .map(|(x, y)| (row + y, col + x)),
             );
+            // Turning these into Positions (when they're possible).
+            let tests = origins.into_iter().flat_map(|(row, col)| {
+                if Pos::in_range(row, col) {
+                    Some(Pos(row as usize, col as usize))
+                } else {
+                    None
+                }
+            });
             // Attempting all of our tests.
             for new_pos in tests {
                 // Returning if we've successfully validated a given state!
@@ -483,7 +505,7 @@ pub mod tetris {
             let mut ren_row = -1;
             for piece in &self.queue {
                 let shape = piece.shape(State::Up);
-                ren_row += if let Tetromino::I = piece {2} else {3};
+                ren_row += if let Tetromino::I = piece { 2 } else { 3 };
                 for (x, y) in shape {
                     let (r, c) = ((ren_row + y) as usize, ((2 + (x * 2)) as usize));
                     queue_render[r][c] = '[';
