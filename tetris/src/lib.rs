@@ -480,15 +480,15 @@ pub mod tetris {
             }
             // Generating the "Queue" Area
             let mut queue_render = [[' '; 8]; 20];
-            let mut ren_row = 2;
+            let mut ren_row = -1;
             for piece in &self.queue {
                 let shape = piece.shape(State::Up);
+                ren_row += if let Tetromino::I = piece {2} else {3};
                 for (x, y) in shape {
                     let (r, c) = ((ren_row + y) as usize, ((2 + (x * 2)) as usize));
                     queue_render[r][c] = '[';
                     queue_render[r][c + 1] = ']';
                 }
-                ren_row += 3;
             }
             // Rendering our generated info.
             writeln!(f, "   HELD                              NEXT   ")?;
