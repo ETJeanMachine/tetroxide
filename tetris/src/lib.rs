@@ -448,7 +448,9 @@ pub mod tetris {
                 }
 
                 if is_solid {
-                    for sub_row in 0..row {
+                    self.board[row].iter_mut().for_each(|x| *x = 0);
+
+                    for sub_row in (0..row).rev() {
                         for col in 0..MAX_COL {
                             self.board[sub_row + 1][col] = self.board[sub_row][col];
                         }
