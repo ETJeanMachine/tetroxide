@@ -8,22 +8,6 @@ pub mod tetris {
     const MAX_ROW: usize = 40;
     const MAX_COL: usize = 10;
 
-    #[derive(Debug, Clone, Copy)]
-    enum Color {
-        Cyan,
-        Yellow,
-        Blue,
-        Purple,
-        Orange,
-        Green,
-        Red,
-    }
-    impl Color {
-        fn id(&self) -> u8 {
-            *self as u8
-        }
-    }
-
     /// A Tetromino is a tetromino in tetris. They are all made up of exactly 4 blocks.
     /// It can be one of 7 different variants:
     /// - `I` Pieces, also called Line Pieces.
@@ -41,16 +25,16 @@ pub mod tetris {
         S,
         Z,
     }
-    impl Tetromino {
-        fn get_color(&self) -> Color {
+    impl Into<u8> for Tetromino {
+        fn into(self) -> u8 {
             match self {
-                Tetromino::I => Color::Cyan,
-                Tetromino::O => Color::Yellow,
-                Tetromino::T => Color::Purple,
-                Tetromino::J => Color::Blue,
-                Tetromino::L => Color::Orange,
-                Tetromino::S => Color::Green,
-                Tetromino::Z => Color::Red,
+                Tetromino::I => 0,
+                Tetromino::O => 1,
+                Tetromino::T => 2,
+                Tetromino::J => 3,
+                Tetromino::L => 4,
+                Tetromino::S => 5,
+                Tetromino::Z => 6,
             }
         }
     }
@@ -387,7 +371,7 @@ pub mod tetris {
                     if row < 19 {
                         self.is_game_over = true;
                     }
-                    self.board[row][col] = self.active.tetromino.get_color().id();
+                    self.board[row][col] = self.active.tetromino as u8;
                 }
 
                 if let Some(next_tet) = self.next_piece() {
@@ -457,7 +441,7 @@ pub mod tetris {
             let mut clone = self.board.clone();
             for pos in self.active.get_squares() {
                 let (x, y) = pos.coords();
-                clone[x][y] = self.active.tetromino.get_color().id();
+                clone[x][y] = self.active.tetromino as u8;
             }
             clone
         }
