@@ -9,8 +9,7 @@ pub mod tetris {
     const MAX_COL: usize = 10;
 
     #[derive(Debug, Clone, Copy)]
-    pub enum Color {
-        Black,
+    enum Color {
         Cyan,
         Yellow,
         Blue,
@@ -20,7 +19,7 @@ pub mod tetris {
         Red,
     }
     impl Color {
-        pub fn id(&self) -> u8 {
+        fn id(&self) -> u8 {
             *self as u8
         }
     }
@@ -33,7 +32,7 @@ pub mod tetris {
     /// - `L`/`J` Pieces.
     /// - `S`/`Z` Pieces, also called "skew".
     #[derive(Debug, Clone, Copy, EnumIter)]
-    enum Tetromino {
+    pub enum Tetromino {
         I,
         O,
         T,
@@ -122,17 +121,17 @@ pub mod tetris {
     }
 
     #[derive(Debug, Clone, Copy)]
-    struct Pos(usize, usize);
+    pub struct Pos(usize, usize);
     impl Pos {
-        fn new(row: usize, col: usize) -> Self {
+        pub fn new(row: usize, col: usize) -> Self {
             // Asserting the pos is within bounds we want or else we panic.
             assert_eq!(row < MAX_ROW, col < MAX_COL);
             Pos(row, col)
         }
-        fn coords(&self) -> (usize, usize) {
+        pub fn coords(&self) -> (usize, usize) {
             (self.0, self.1)
         }
-        fn try_move(&self, x: i32, y: i32) -> Option<Self> {
+        pub fn try_move(&self, x: i32, y: i32) -> Option<Self> {
             let (row, col) = (self.0 as i32, self.1 as i32);
             if row + x < 0 || row + x >= MAX_ROW as i32 || col + y < 0 || col + y >= MAX_COL as i32
             {
@@ -335,9 +334,9 @@ pub mod tetris {
     pub struct Tetris {
         board: [[u8; MAX_COL]; MAX_ROW],
         active: ActivePiece,
-        held: Option<Tetromino>,
-        queue: VecDeque<Tetromino>,
         bag: Bag,
+        pub held: Option<Tetromino>,
+        pub queue: VecDeque<Tetromino>,
         pub is_game_over: bool,
     }
     impl Tetris {
@@ -369,7 +368,7 @@ pub mod tetris {
             }
         }
 
-        /// Return the next piece in the queue and pull a new piece 
+        /// Return the next piece in the queue and pull a new piece
         /// from the bag to replace it
         fn next_piece(&mut self) -> Option<Tetromino> {
             if let Some(tet) = self.bag.next() {
@@ -388,7 +387,7 @@ pub mod tetris {
                     if row < 19 {
                         self.is_game_over = true;
                     }
-                    self.board[row][col] = 1;
+                    self.board[row][col] = self.active.tetromino.get_color().id();
                 }
 
                 if let Some(next_tet) = self.next_piece() {
@@ -451,6 +450,16 @@ pub mod tetris {
                     }
                 }
             }
+        }
+
+        /// Returns a read-only 40x20 array of the board.
+        pub fn get_board(&self) -> [[u8; MAX_COL]; MAX_ROW] {
+            let mut clone = self.board.clone();
+            for pos in self.active.get_squares() {
+                let (x, y) = pos.coords();
+                clone[x][y] = self.active.tetromino.get_color().id();
+            }
+            clone
         }
     }
 }
