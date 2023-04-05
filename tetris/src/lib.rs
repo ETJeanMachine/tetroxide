@@ -416,20 +416,20 @@ pub mod tetris {
         }
 
         /// Erase filled rows and move rows above down
-        pub fn clean_board(&mut self) {
-            for y in (0..MAX_ROW).rev() {
+        pub fn clear_lines(&mut self) {
+            for row in (0..MAX_ROW).rev() {
                 let mut is_solid = true;
 
-                for x in 0..MAX_COL {
-                    if self.board[y][x] == 0 {
+                for col in 0..MAX_COL {
+                    if self.board[row][col] == 0 {
                         is_solid = false;
                     }
                 }
 
                 if is_solid {
-                    for z in 0..y {
-                        for x in 0..MAX_COL {
-                            self.board[z + 1][x] = self.board[z][x];
+                    for sub_row in 0..row {
+                        for col in 0..MAX_COL {
+                            self.board[sub_row + 1][col] = self.board[sub_row][col];
                         }
                     }
                 }

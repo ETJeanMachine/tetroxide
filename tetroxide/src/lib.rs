@@ -76,13 +76,15 @@ pub mod tetroxide {
 
                 if frame_count % 48 == 0 {
                     self.tetris.drop();
-                    self.tetris.clean_board();
+                    self.tetris.clear_lines();
                 }
 
                 self.looper.loop_sleep();
                 frame_count += 1;
             }
             stdout.flush()?;
+
+            disable_raw_mode()?;
 
             Ok(())
         }
