@@ -8,14 +8,19 @@ fn main() -> Result<(), std::io::Error> {
     // We can rotate and not drop for a limited amount of time in
     // debug mode.
     let mut frame_count = 0;
+    let mut first = true;
     const MAX_FRAMES: usize = 3;
     println!("{}", tet);
     while !tet.is_game_over {
+        first = false;
         println!("Input: (w - hold | q & e - rotate | a & d - shift | s - hard drop | enter - soft drop)");
         let mut buffer = String::new();
         let stdin = io::stdin();
         let mut handle = stdin.lock();
         handle.read_line(&mut buffer)?;
+        if !first {
+            print!("\x1B[2J\x1B[1;1H");
+        }
         let lower = buffer.to_lowercase();
         match lower.trim() {
             "w" => tet.hold(),
