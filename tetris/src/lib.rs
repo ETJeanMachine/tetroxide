@@ -410,6 +410,20 @@ pub mod tetris {
             }
         }
 
+        pub fn hard_drop(&mut self) {
+            while self.active.drop(&self.board) {}
+            
+            for (row, col) in self.active.get_squares() {
+                if row < 20 {
+                    self.is_game_over = true;
+                }
+                self.board[row as usize][col as usize] = self.active.tetromino as u8;
+            }
+            if let Some(next_tet) = self.next_piece() {
+                self.active = ActivePiece::new(next_tet);
+            }
+        }
+
         /// Call the active piece's rotate()
         pub fn rotate(&mut self, clockwise: bool) {
             self.active.rotate(clockwise, &self.board);
