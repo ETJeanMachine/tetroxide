@@ -42,7 +42,7 @@ pub mod tetroxide {
             let mut stdout = stdout.lock();
 
             execute!(stdout, Hide, EnterAlternateScreen, EnableMouseCapture)?;
-            
+
             self.tetris.drop();
             self.tetris.drop();
             println!("{}", self.tetris);
@@ -57,8 +57,6 @@ pub mod tetroxide {
 
                 let event = read()?;
 
-                
-
                 match event {
                     Event::Key(KeyEvent { code, .. }) => match code {
                         KeyCode::Esc => break,
@@ -69,7 +67,7 @@ pub mod tetroxide {
                         KeyCode::Char(_) => todo!(),
                         KeyCode::F(1) => todo!(),
                         KeyCode::Modifier(_) => todo!(),
-                        _ => {},
+                        _ => {}
                     },
                     _ => {}
                 }
