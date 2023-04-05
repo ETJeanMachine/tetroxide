@@ -11,7 +11,7 @@ fn main() -> Result<(), std::io::Error> {
     const MAX_FRAMES: usize = 3;
     println!("{}", tet);
     while !tet.is_game_over {
-        println!("Input: ");
+        println!("Input: (w - hold | q & e - rotate | a & d - shift | s - hard drop | enter - soft drop)");
         let mut buffer = String::new();
         let stdin = io::stdin();
         let mut handle = stdin.lock();
