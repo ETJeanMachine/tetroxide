@@ -410,6 +410,8 @@ pub mod tetris {
             }
         }
 
+        /// Immediately drop piece as far as it will go, and solidify at final
+        /// position.
         pub fn hard_drop(&mut self) {
             while self.active.drop(&self.board) {}
 
