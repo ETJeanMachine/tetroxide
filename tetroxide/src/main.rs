@@ -28,10 +28,11 @@ fn main() -> Result<(), std::io::Error> {
             handle.read_line(&mut buffer)?;
             print!("\x1B[2J\x1B[1;1H");
             let lower = buffer.to_lowercase();
-            match lower.trim() {
+            let trimmed = lower.trim();
+            match trimmed {
                 "w" => tet.hold(),
                 "q" | "e" => {
-                    if lower.trim() == "q" {
+                    if trimmed == "q" {
                         tet.rotate(true);
                     } else {
                         tet.rotate(false)
@@ -45,18 +46,18 @@ fn main() -> Result<(), std::io::Error> {
                 }
                 "a" => tet.shift(true),
                 "d" => tet.shift(false),
-                "s" | _ => {
-                    if lower.trim() == "s" {
+                _ => {
+                    if trimmed == "s" {
                         tet.hard_drop();
                     } else {
-                        tet.drop();
+                        tet.soft_drop();
                     }
                     tet.clear_lines();
                     println!("{}", tet);
                     continue;
                 }
             }
-            tet.drop();
+            tet.soft_drop();
             println!("{}", tet);
         }
     } else {

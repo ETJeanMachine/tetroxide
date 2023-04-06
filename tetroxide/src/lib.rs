@@ -26,6 +26,11 @@ pub mod tetroxide {
         tetris: Tetris,
         looper: LoopHelper,
     }
+    impl Default for Game {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
     impl Game {
         pub fn new() -> Self {
             Game {
@@ -43,8 +48,8 @@ pub mod tetroxide {
 
             execute!(stdout, Hide, EnterAlternateScreen, EnableMouseCapture)?;
 
-            self.tetris.drop();
-            self.tetris.drop();
+            self.tetris.soft_drop();
+            self.tetris.soft_drop();
             println!("{}", self.tetris);
             let input = format!("{}", self.tetris);
             backend::write(&mut stdout, input.as_str(), 90, (0, 0), 15)?;
@@ -57,8 +62,8 @@ pub mod tetroxide {
 
                 let event = read()?;
 
-                match event {
-                    Event::Key(KeyEvent { code, .. }) => match code {
+                if let Event::Key(KeyEvent { code, .. }) = event {
+                    match code {
                         KeyCode::Esc => break,
                         KeyCode::Left => todo!(),
                         KeyCode::Right => todo!(),
@@ -68,12 +73,11 @@ pub mod tetroxide {
                         KeyCode::F(1) => todo!(),
                         KeyCode::Modifier(_) => todo!(),
                         _ => {}
-                    },
-                    _ => {}
+                    }
                 }
 
                 if frame_count % 48 == 0 {
-                    self.tetris.drop();
+                    self.tetris.soft_drop();
                     self.tetris.clear_lines();
                 }
 

@@ -71,9 +71,9 @@ pub mod tetris {
             }
         }
     }
-    impl Into<u8> for Tetromino {
-        fn into(self) -> u8 {
-            match self {
+    impl From<Tetromino> for u8 {
+        fn from(val: Tetromino) -> Self {
+            match val {
                 Tetromino::I => 0,
                 Tetromino::O => 1,
                 Tetromino::T => 2,
@@ -171,7 +171,7 @@ pub mod tetris {
             }
         }
         pub fn in_range(row: i32, col: i32) -> bool {
-            return row >= 0 && row < MAX_ROW as i32 && col >= 0 && col < MAX_COL as i32;
+            row >= 0 && row < MAX_ROW as i32 && col >= 0 && col < MAX_COL as i32
         }
     }
 
@@ -319,7 +319,7 @@ pub mod tetris {
         /// Attempt to move a piece down by 1 pos
         /// if successful, update active piece position, return `true`
         /// if not, return `false`
-        fn drop(&mut self, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
+        fn soft_drop(&mut self, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
             if let Some(new_pos) = self.origin.try_move(0, 1) {
                 return self.validate(
                     &ActivePiece {
@@ -356,17 +356,13 @@ pub mod tetris {
         queue: VecDeque<Tetromino>,
         pub is_game_over: bool,
     }
-    impl Tetris {
-        pub fn default() -> Self {
+    impl Default for Tetris {
+        fn default() -> Self {
             let board = [[0; MAX_COL]; MAX_ROW];
             let mut bag = Bag::new();
-            // Placeholder.
-            let mut active = ActivePiece::new(Tetromino::I);
-            if let Some(t) = bag.next() {
-                // We know the bag will always be full, but we must create a
-                // placeholder anyways.
-                active = ActivePiece::new(t);
-            }
+            // Setting the active piece.
+            let active = ActivePiece::new(bag.next().unwrap());
+
             // The queue is always a size of 4, and contains the next 4 tetrominos
             // from the bag, after the initial piece.
             let mut queue = VecDeque::with_capacity(4);
@@ -384,7 +380,9 @@ pub mod tetris {
                 is_game_over: false,
             }
         }
+    }
 
+    impl Tetris {
         pub fn new(
             provided_board: Option<[[u8; MAX_COL]; MAX_ROW]>,
             active_piece: Option<Tetromino>,
@@ -404,17 +402,12 @@ pub mod tetris {
 
             let mut bag = Bag::new();
 
-            let mut active: ActivePiece;
-            if let Some(t) = active_piece {
+            let active = if let Some(t) = active_piece {
                 // If arg for first piece is provided, use it.
-                active = ActivePiece::new(t);
+                ActivePiece::new(t)
             } else {
-                if let Some(t) = bag.next() {
-                    // Note: We might want a way to pre-set the bag as well for testing specific sequences.
-                    active = ActivePiece::new(t);
-                }
-                active = ActivePiece::new(Tetromino::I); // Will never exec.
-            }
+                ActivePiece::new(bag.next().unwrap())
+            };
 
             // The queue is always a size of 4, and contains the next 4 tetrominos
             // from the bag, after the initial piece.
@@ -444,10 +437,10 @@ pub mod tetris {
             self.queue.pop_front()
         }
 
-        /// Call the active piece's drop() to update its position if possible.
+        /// Call the active piece's soft_drop() to update its position if possible.
         /// If not, write piece to game board and draw new piece.
-        pub fn drop(&mut self) {
-            if !self.active.drop(&self.board) {
+        pub fn soft_drop(&mut self) {
+            if !self.active.soft_drop(&self.board) {
                 for (row, col) in self.active.get_squares() {
                     if row < 20 {
                         self.is_game_over = true;
@@ -463,7 +456,7 @@ pub mod tetris {
         /// Immediately drop piece as far as it will go, and solidify at final
         /// position.
         pub fn hard_drop(&mut self) {
-            while self.active.drop(&self.board) {}
+            while self.active.soft_drop(&self.board) {}
 
             for (row, col) in self.active.get_squares() {
                 if row < 20 {
@@ -516,11 +509,9 @@ pub mod tetris {
                 if let Some(next) = self.next_piece() {
                     self.active = ActivePiece::new(next);
                 }
-            } else {
-                if let Some(temp_tet) = self.held {
-                    self.held = Some(self.active.tetromino);
-                    self.active = ActivePiece::new(temp_tet);
-                }
+            } else if let Some(temp_tet) = self.held {
+                self.held = Some(self.active.tetromino);
+                self.active = ActivePiece::new(temp_tet);
             }
         }
     }
@@ -538,14 +529,14 @@ pub mod tetris {
             }
             // Generating the gameboard area
             let mut board_render = [[' '; MAX_COL * 2]; 20];
-            for row in 0..20 {
-                for col in 0..MAX_COL {
-                    if self.board[row + 20][col] == 0 {
-                        board_render[row][2 * col] = ' ';
-                        board_render[row][(2 * col) + 1] = '.';
+            for (r, row) in board_render.iter_mut().enumerate() {
+                for c in 0..MAX_COL {
+                    if self.board[r + 20][c] == 0 {
+                        row[2 * c] = ' ';
+                        row[(2 * c) + 1] = '.';
                     } else {
-                        board_render[row][2 * col] = '[';
-                        board_render[row][(2 * col) + 1] = ']';
+                        row[2 * c] = '[';
+                        row[(2 * c) + 1] = ']';
                     }
                 }
             }
