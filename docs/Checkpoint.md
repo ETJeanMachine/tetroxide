@@ -22,6 +22,7 @@ A command line based version of [Tetris](https://en.wikipedia.org/wiki/Tetris?ol
 - Partially implemented `tetroxide` crate
   - main() to handle interfacing between the `Tetris` struct and the game loop, taking input, and formatting for console printing.
   - started lib implementation for next phase with `TUI` based graphics.
+  - partial unit testing
 
 ## Additional Details
 
@@ -33,6 +34,7 @@ A command line based version of [Tetris](https://en.wikipedia.org/wiki/Tetris?ol
 - Code Structure:
   - `tetris` crate
     - `lib` represents single frame game state, as well as all actions it can take
+    - `tests` contains unit tests
   - `tetroxide` crate
     - `main` runs core game loop, takes input, and calls everything else
     - `lib` will eventually contain `TUI` graphics and input handling
