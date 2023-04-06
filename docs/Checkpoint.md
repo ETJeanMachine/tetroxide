@@ -17,13 +17,22 @@ A command line based version of [Tetris](https://en.wikipedia.org/wiki/Tetris?ol
   - `State` enum to represent abstract piece rotations states, with `impl` for progressing rotation
   - `Bag` struct to represent Tetris' clever system for generating random new pieces while ensuring no sequential repetition greater than 2, with `impl`s for creating new `Bag`, filling with 7 new random pieces, and drawing piece from `Bag`
   - `Pos` struct, with `impl`s to encapsulate piece position checking and attempting to move
-  - `ActivePiece` struct
+  - `ActivePiece` struct to represent abstract active piece, both for control and on board, with `impl`s for getting exact block coords and rotation/movement.
+  - `Tetris` struct to represent the overall single-frame gamestate (board and all supporting components), with `impl`s for initialization, piece rotation/movement, holding, line clearing, and displaying the actual game in the console.
+- Partially implemented `tetroxide` crate
+  - main() to handle interfacing between the `Tetris` struct and the game loop, taking input, and formatting for console printing.
+  - started lib implementation for next phase with `TUI` based graphics.
 
 ## Additional Details
 
-- List any external Rust crates required for the project (i.e., what
-  `[dependencies]` have been added to `Cargo.toml` files).
-- Briefly describe the structure of the code (what are the main components, the
-  module dependency structure).
-- Pose any questions that you may have about your project and/or request
-  feedback on specific aspects of the project.
+- External crates:
+  - tui
+  - tui-input
+  - spin_sleep
+  - crossterm
+- Code Structure:
+  - `tetris` crate
+    - `lib` represents single frame game state, as well as all actions it can take
+  - `tetroxide` crate
+    - `main` runs core game loop, takes input, and calls everything else
+    - `lib` will eventually contain `TUI` graphics and input handling
