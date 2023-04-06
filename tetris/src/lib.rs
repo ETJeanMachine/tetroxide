@@ -385,32 +385,37 @@ pub mod tetris {
             }
         }
 
-        pub fn new(provided_board: Option<[[u8; MAX_COL]; MAX_ROW]>, active_piece : Option<Tetromino>) -> Self { // For testing purposes, allows setting board to arbitrary state
+        pub fn new(
+            provided_board: Option<[[u8; MAX_COL]; MAX_ROW]>,
+            active_piece: Option<Tetromino>,
+        ) -> Self {
+            // For testing purposes, allows setting board to arbitrary state
             /*
-                Similar to default(), this method initialized a Tetris object, however it allows pre-set board and
-                active_piece options. Not using these parameters will result in identical results to calling default().
-             */
+               Similar to default(), this method initialized a Tetris object, however it allows pre-set board and
+               active_piece options. Not using these parameters will result in identical results to calling default().
+            */
             let board;
-            if let Some(b) = provided_board{ // If arg for board is provided, use it.
+            if let Some(b) = provided_board {
+                // If arg for board is provided, use it.
                 board = b;
-            }
-            else{
+            } else {
                 board = [[0; MAX_COL]; MAX_ROW];
             }
-            
+
             let mut bag = Bag::new();
-        
-            let mut active : ActivePiece;
-            if let Some(t) = active_piece{// If arg for first piece is provided, use it.
+
+            let mut active: ActivePiece;
+            if let Some(t) = active_piece {
+                // If arg for first piece is provided, use it.
                 active = ActivePiece::new(t);
-            }
-            else{
-                if let Some(t) = bag.next() { // Note: We might want a way to pre-set the bag as well for testing specific sequences.
+            } else {
+                if let Some(t) = bag.next() {
+                    // Note: We might want a way to pre-set the bag as well for testing specific sequences.
                     active = ActivePiece::new(t);
                 }
                 active = ActivePiece::new(Tetromino::I); // Will never exec.
-            } 
-            
+            }
+
             // The queue is always a size of 4, and contains the next 4 tetrominos
             // from the bag, after the initial piece.
             let mut queue = VecDeque::with_capacity(4);
@@ -428,7 +433,6 @@ pub mod tetris {
                 is_game_over: false,
             }
         }
-
 
         /// Return the next piece in the queue and pull a new piece
         /// from the bag to replace it
@@ -483,7 +487,7 @@ pub mod tetris {
 
         /// Erase filled rows and move rows above down
         pub fn clear_lines(&mut self) {
-            for row in (0..MAX_ROW).rev() {               
+            for row in (0..MAX_ROW).rev() {
                 loop {
                     let is_solid = self.board[row].iter().all(|&itm| itm != 0);
 
