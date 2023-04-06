@@ -1,4 +1,6 @@
 #[cfg(test)]
+use tetris::tetris::{Tetris, Tetromino};
+use std::fs;
 
 pub fn standard_strip(s: &mut String) -> String {
     // extracts the 'board' out from the UI.
@@ -16,18 +18,20 @@ pub fn standard_strip(s: &mut String) -> String {
     stripped
 }
 
-mod test_rotate {
-    use tetris::tetris::{Tetris, Tetromino};
-
+mod test_new {
     use super::*;
     #[test]
-    fn test_rotate() -> () {
-        let mut t = Tetris::new(None, Some(Tetromino::I));
+    fn test_new() -> () {
+        let  t = Tetris::new(None, Some(Tetromino::I));
+        let mut s = standard_strip(&mut t.to_string());
+        s.retain(|c| c != '\n');
+        s.retain(|c| c != '\r');
 
-        t.rotate(true);
-
-        let s = standard_strip(&mut t.to_string());
-
-        println!("{}", s);
+      
+        let mut f  = fs::read_to_string("tests\\assets\\testnew.txt").unwrap();
+        f.retain(|c| c != '\n');
+        f.retain(|c| c != '\r');
+     
+        assert_eq!(f, s);
     }
 }
