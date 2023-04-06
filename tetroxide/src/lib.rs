@@ -29,7 +29,7 @@ pub mod tetroxide {
     impl Game {
         pub fn new() -> Self {
             Game {
-                tetris: Tetris::new(),
+                tetris: Tetris::default(),
                 looper: LoopHelper::builder()
                     .report_interval_s(0.5)
                     .build_with_target_rate(60),

@@ -5,7 +5,7 @@ use tetroxide::tetroxide::Game;
 
 fn main() -> Result<(), std::io::Error> {
     print!("\x1B[2J\x1B[1;1H");
-    let mut tet = Tetris::new();
+    let mut tet = Tetris::default();
     // We can rotate and not drop for a limited amount of time in
     // debug mode.
     let mut frame_count = 0;
