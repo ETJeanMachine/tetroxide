@@ -483,22 +483,20 @@ pub mod tetris {
 
         /// Erase filled rows and move rows above down
         pub fn clear_lines(&mut self) {
-            for row in (0..MAX_ROW).rev() {
-                let mut is_solid = true;
+            for row in (0..MAX_ROW).rev() {               
+                loop {
+                    let is_solid = self.board[row].iter().all(|&itm| itm != 0);
 
-                for col in 0..MAX_COL {
-                    if self.board[row][col] == 0 {
-                        is_solid = false;
-                    }
-                }
+                    if is_solid {
+                        self.board[row].iter_mut().for_each(|x| *x = 0);
 
-                if is_solid {
-                    self.board[row].iter_mut().for_each(|x| *x = 0);
-
-                    for sub_row in (0..row).rev() {
-                        for col in 0..MAX_COL {
-                            self.board[sub_row + 1][col] = self.board[sub_row][col];
+                        for sub_row in (0..row).rev() {
+                            for col in 0..MAX_COL {
+                                self.board[sub_row + 1][col] = self.board[sub_row][col];
+                            }
                         }
+                    } else {
+                        break;
                     }
                 }
             }
