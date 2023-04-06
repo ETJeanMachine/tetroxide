@@ -1,29 +1,16 @@
 #[cfg(test)]
 
-pub fn fml(s: &mut String)  ->  Vec<&str>   {
-    // extracts the 'board' out from the UI. 
-    // skip first row, get chars 10-34 until row 21 (22 includes ghosting line)
-    let mut stripped : Vec<&str> = vec!();
-    let mut l = s.lines();
- 
-    l.next();
-    for _rows in 1..22{
-        let curr_row = l.next().expect("Will never have less than 22 lines.");
-        stripped.push(&curr_row[10..34]);
-    }
-    stripped
-}
-    
 pub fn standard_strip(s: &mut String)  ->  String  {
     // extracts the 'board' out from the UI. 
     // skip first row, get chars 10-34 until row 21 (22 includes ghosting line)
     let mut stripped = String::new();
-    let mut l = s.lines();
- 
-    l.next();
-    for _rows in 1..22{
-        let curr_row = l.next().expect("Will never have less than 22 lines.");
-        stripped.push_str(format!("{:.*}\n", 10, 34).as_str());
+    for line in s.split("\n") {
+    if let Some(i) = line.find('<') {
+        let (_, end) = line.split_at(i + 2);
+        if end[0..1] != *"=" {
+        stripped.push_str(format!("{:.*}\n", 20, end).as_str());
+        }
+    }
     }
     stripped
 
