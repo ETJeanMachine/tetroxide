@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 
-rand="*"
-strum="*"
-strum_macros="*"
+rand="0.8.4"
+strum="0.24"
+strum_macros="0.24"
