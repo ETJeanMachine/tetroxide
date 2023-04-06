@@ -71,6 +71,19 @@ pub mod tetris {
             }
         }
     }
+    impl Display for Tetromino {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Tetromino::I => writeln!(f, "[][][][]"),
+                Tetromino::O => writeln!(f, "[][]\n[][]"),
+                Tetromino::T => writeln!(f, "  []    \n[][][]  "),
+                Tetromino::J => writeln!(f, "[]      \n[][][]  "),
+                Tetromino::L => writeln!(f, "    []  \n[][][]  "),
+                Tetromino::S => writeln!(f, "  [][]  \n[][]    "),
+                Tetromino::Z => writeln!(f, "[][]    \n  [][]  "),
+            }
+        }
+    }
     impl From<Tetromino> for u8 {
         fn from(val: Tetromino) -> Self {
             match val {
@@ -517,72 +530,64 @@ pub mod tetris {
     }
     impl Display for Tetris {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            // Generating the "Held" Area
-            let mut held_render = [[' '; 8]; 20];
-            if let Some(held) = self.held {
-                let shape = held.shape(State::Up);
-                for (x, y) in shape {
-                    let (r, c) = ((2 + y) as usize, ((2 + (x * 2)) as usize));
-                    held_render[r][c] = '[';
-                    held_render[r][c + 1] = ']';
-                }
+            // Render the "Held" Area.
+            let held_str = self.held.map_or(String::new(), |h| h.to_string());
+            let mut held_lines = held_str.lines();
+            // Rendering the gameboard area.
+            let mut board_render = Vec::with_capacity(20);
+            for r in 0..20 {
+                let row_str: String = self.board[r + 20]
+                    .into_iter()
+                    .map(|x| if x == 0 { " ." } else { "[]" })
+                    .collect();
+                board_render.push(row_str);
             }
-            // Generating the gameboard area
-            let mut board_render = [[' '; MAX_COL * 2]; 20];
-            for (r, row) in board_render.iter_mut().enumerate() {
-                for c in 0..MAX_COL {
-                    if self.board[r + 20][c] == 0 {
-                        row[2 * c] = ' ';
-                        row[(2 * c) + 1] = '.';
-                    } else {
-                        row[2 * c] = '[';
-                        row[(2 * c) + 1] = ']';
-                    }
-                }
-            }
-            // Generating the active piece.
+            // Rendering the active piece.
             let (mut min_col, mut max_col) = (11, 0);
             for (row, col) in self.active.get_squares() {
                 let (row, col) = (row as usize, col as usize);
-                // For "ghosting".
-                min_col = min_col.min(col);
-                max_col = max_col.max(col);
+                // Min/max is for "ghosting".
+                (min_col, max_col) = (min_col.min(col), max_col.max(col));
                 if row >= 20 {
-                    board_render[row - 20][2 * col] = '[';
-                    board_render[row - 20][(2 * col) + 1] = ']';
+                    board_render[row - 20].replace_range(2 * col..2 * (col + 1), "[]");
                 }
             }
-            // Generating the "Queue" Area
-            let mut queue_render = [[' '; 8]; 20];
-            let mut ren_row = -1;
-
+            // Rendering the "Queue" Area.
+            let mut queue = VecDeque::new();
             for piece in &self.queue {
-                let shape = piece.shape(State::Up);
-                ren_row += if let Tetromino::I = piece { 2 } else { 3 };
-                for (x, y) in shape {
-                    let (r, c) = ((ren_row + y) as usize, ((2 + (x * 2)) as usize));
-                    queue_render[r][c] = '[';
-                    queue_render[r][c + 1] = ']';
-                }
+                queue.push_front(piece.to_string());
             }
-            // Rendering our generated info.
-            writeln!(f, "   HELD                              NEXT   ")?;
+            // Top of the Tetris Game.
+            writeln!(f, "{:>7}{:>34}", "HELD", "NEXT")?;
+            let mut queue_string = queue.pop_back().unwrap_or(String::new());
+            let mut queue_lines = queue_string.lines();
             for row in 0..20 {
-                let h_render: String = held_render[row].into_iter().collect();
-                let b_render: String = board_render[row].into_iter().collect();
-                let q_render: String = queue_render[row].into_iter().collect();
-                writeln!(f, " {} <!{}!> {} ", h_render, b_render, q_render)?;
-            }
-            write!(f, "          <!")?;
-            for c in 0..10 {
-                if c >= min_col && c <= max_col {
-                    write!(f, "##")?;
+                let (held_render, queue_render) = if row > 0 {
+                    (
+                        held_lines.next().unwrap_or(""),
+                        queue_lines.next().unwrap_or(""),
+                    )
                 } else {
-                    write!(f, "==")?;
+                    ("", "")
+                };
+                writeln!(
+                    f,
+                    "{:^10}<!{}!>{:^10}",
+                    held_render, board_render[row], queue_render,
+                )?;
+                if queue_render.is_empty() && !queue_string.is_empty() && row != 0 {
+                    queue_string = queue.pop_back().unwrap_or(String::new());
+                    queue_lines = queue_string.lines();
                 }
             }
-            writeln!(f, "!>          ")?;
-            writeln!(f, "            \\/\\/\\/\\/\\/\\/\\/\\/\\/\\/            ")?;
+            // Rendering the "ghost" of the piece.
+            writeln!(
+                f,
+                "{:>12}{:=<20}!>",
+                "<!",
+                format!("{:#<1$}", "=".repeat((min_col) * 2), (max_col + 1) * 2)
+            )?;
+            writeln!(f, "{:>32}", "\\/".repeat(10))?;
             Ok(())
         }
     }
