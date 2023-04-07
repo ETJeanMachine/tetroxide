@@ -372,7 +372,7 @@ pub mod tetris {
         delay_count: u8,
         gravity_count: f64,
         pub score: u32,
-        pub level: u8,
+        pub level: u32,
         pub lines: u32,
         pub is_game_over: bool,
     }
@@ -459,7 +459,7 @@ pub mod tetris {
             }
         }
 
-        pub fn set_level(&mut self, level: u8) {
+        pub fn set_level(&mut self, level: u32) {
             if level >= 15 {
                 self.level = 15;
             } else {
@@ -585,7 +585,7 @@ pub mod tetris {
                 true
             } else {
                 // Here we check to see if the piece is immobile. If it is, we lock it.
-                let mut cloned = self.active.clone();
+                let mut cloned = self.active;
                 if !(cloned.shift(true, &self.board)
                     && cloned.shift(false, &self.board)
                     && cloned.rotate(true, &self.board)
@@ -601,12 +601,13 @@ pub mod tetris {
 
         /// Erase filled rows and move rows above down; as well as update the score to match.
         fn try_clear(&mut self) {
+            let mut l_count = 0;
             for row in (0..MAX_ROW).rev() {
                 loop {
                     let is_solid = self.board[row].iter().all(|&itm| itm != 0);
                     if is_solid {
+                        l_count += 1;
                         self.board[row].iter_mut().for_each(|x| *x = 0);
-
                         for sub_row in (0..row).rev() {
                             for col in 0..MAX_COL {
                                 self.board[sub_row + 1][col] = self.board[sub_row][col];
@@ -617,6 +618,16 @@ pub mod tetris {
                     }
                 }
             }
+            // Adding up our score.
+            self.lines += l_count;
+            self.score += self.level
+                * match l_count {
+                    1 => 100,
+                    2 => 300,
+                    3 => 500,
+                    4 => 800,
+                    _ => 0,
+                };
         }
     }
     impl Display for Tetris {
@@ -633,14 +644,20 @@ pub mod tetris {
                     .collect();
                 board_render.push(row_str);
             }
-            // Rendering the active piece.
-            let (mut min_col, mut max_col) = (11, 0);
-            for (row, col) in self.active.get_squares() {
-                let (row, col) = (row as usize, col as usize);
-                // Min/max is for "ghosting".
-                (min_col, max_col) = (min_col.min(col), max_col.max(col));
-                if row >= 20 {
-                    board_render[row - 20].replace_range(2 * col..2 * (col + 1), "[]");
+            // Rendering the piece.
+            let mut ghost = self.active;
+            while ghost.soft_drop(&self.board) {}
+            let (g_squares, a_squares) = (ghost.get_squares(), self.active.get_squares());
+            for i in 0..4 {
+                let ((g_r, g_c), (a_r, a_c)) = (g_squares[i], a_squares[i]);
+                let (g_r, g_c, a_r, a_c) = (g_r as usize, g_c as usize, a_r as usize, a_c as usize);
+                // The ghost piece first.
+                if g_r >= 20 {
+                    board_render[g_r - 20].replace_range(2 * g_c..2 * (g_c + 1), " X");
+                }
+                // Then the active piece.
+                if a_r >= 20 {
+                    board_render[a_r - 20].replace_range(2 * a_c..2 * (a_c + 1), "[]");
                 }
             }
             // Rendering the "Queue" Area.
@@ -653,35 +670,29 @@ pub mod tetris {
                 "SCORE", "", self.score, "LEVEL", "", self.level, "LINES", "", self.lines
             );
             let mut score_lines = score_info.lines();
-            let mut queue_string = queue.pop_back().unwrap_or(String::new());
+            let mut queue_string = queue.pop_back().unwrap_or_default();
             let mut queue_lines = queue_string.lines();
-            for row in 0..20 {
+            for (row, centre_render) in board_render.iter().enumerate() {
                 let (mut left_render, mut right_render) = ("", "");
                 if row > 0 {
                     left_render = if row >= 4 {
-                        score_lines.next().unwrap_or("")
+                        score_lines.next().unwrap_or_default()
                     } else {
-                        held_lines.next().unwrap_or("")
+                        held_lines.next().unwrap_or_default()
                     };
-                    right_render = queue_lines.next().unwrap_or("");
+                    right_render = queue_lines.next().unwrap_or_default();
                 }
                 writeln!(
                     f,
                     "{:^10}<!{}!>{:^10}",
-                    left_render, board_render[row], right_render,
+                    left_render, centre_render, right_render,
                 )?;
                 if right_render.is_empty() && !queue_string.is_empty() && row != 0 {
-                    queue_string = queue.pop_back().unwrap_or(String::new());
+                    queue_string = queue.pop_back().unwrap_or_default();
                     queue_lines = queue_string.lines();
                 }
             }
-            // Rendering the "ghost" of the piece.
-            writeln!(
-                f,
-                "{:>12}{:=<20}!>",
-                "<!",
-                format!("{:#<1$}", "=".repeat((min_col) * 2), (max_col + 1) * 2)
-            )?;
+            // Bottom of the board.
             writeln!(f, "{:>32}", "\\/".repeat(10))?;
             Ok(())
         }
