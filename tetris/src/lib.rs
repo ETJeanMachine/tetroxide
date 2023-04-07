@@ -188,6 +188,7 @@ pub mod tetris {
         }
     }
 
+    #[derive(Debug, Clone, Copy)]
     struct ActivePiece {
         tetromino: Tetromino,
         origin: Pos,
@@ -242,7 +243,7 @@ pub mod tetris {
         /// This function takes in a bool as to if it is going
         /// clockwise/counter-clockwise, and performs the rotation on itself if it
         /// can be successfully done.
-        fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) {
+        fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
             // Getting our new rotational state.
             let new_rotation = self.rotation.rotate(clockwise);
             let (row, col) = (self.origin.0 as i32, self.origin.1 as i32);
@@ -268,7 +269,7 @@ pub mod tetris {
             // We extend our possible tests with the 4 additional tests:
             origins.extend(
                 match self.tetromino {
-                    Tetromino::O => return, /* O Tetromino's have no rotational logic. */
+                    Tetromino::O => return false, /* O Tetromino's have no rotational logic. */
                     Tetromino::I => match (self.rotation, new_rotation) {
                         // CW from Spawn State OR CCW to Inverted Spawn State
                         (State::Up, State::Right) | (State::Left, State::Down) => kick_data_i1,
@@ -324,9 +325,10 @@ pub mod tetris {
                     },
                     board,
                 ) {
-                    return;
+                    return true;
                 }
             }
+            false
         }
 
         /// Attempt to move a piece down by 1 pos
@@ -367,7 +369,7 @@ pub mod tetris {
         bag: Bag,
         held: (Option<Tetromino>, bool),
         queue: VecDeque<Tetromino>,
-        frame_count: u8,
+        delay_count: u8,
         gravity_count: f64,
         pub score: u32,
         pub level: u8,
@@ -394,7 +396,7 @@ pub mod tetris {
                 bag,
                 held: (None, false),
                 queue,
-                frame_count: 0,
+                delay_count: 0,
                 gravity_count: 0.0,
                 score: 0,
                 level: 0,
@@ -446,7 +448,7 @@ pub mod tetris {
                 held: (None, false),
                 queue,
                 bag,
-                frame_count: 0,
+                delay_count: 0,
                 gravity_count: 0.0,
                 score: 0,
                 level: 0,
@@ -481,15 +483,16 @@ pub mod tetris {
             let l = self.level as f64 - 1.0;
             let time = f64::powf(0.8 - (l * 0.007), l);
             self.gravity_count += 1.0 / (time * 60.0);
-            self.frame_count += 1;
+            self.delay_count += 1;
             // Getting the total number of cells we need to advance...
             for _i in 0..self.gravity_count as u8 {
                 self.gravity_count -= 1.0;
-                self.soft_drop();
             }
-            // Resetting the frame counter if we've done 60 frames.
-            if self.frame_count % 60 == 0 {
-                self.frame_count = 0;
+            // Trying to drop the piece - if not, we try to lock it.
+            if !self.active.soft_drop(&self.board) {
+                self.try_lock(false);
+            } else {
+                self.delay_count = 0;
             }
         }
 
@@ -556,19 +559,36 @@ pub mod tetris {
         /// specifying whether or not we want to force the locking of the piece - as
         /// for certain moves (such as T-spins and hard drops) we want this to occur.
         fn try_lock(&mut self, forced: bool) -> bool {
-            if self.frame_count < LOCK_DELAY && !forced {
-                false
-            } else if forced {
-                self.frame_count = 0;
+            /// Private "lock" function to be used for when it successfully does lock in place.
+            fn lock(tetris: &mut Tetris) {
                 // Locking the piece onto the board.
-                for (row, col) in self.active.get_squares() {
-                    self.board[row as usize][col as usize] = u8::from(self.active.tetromino);
+                for (row, col) in tetris.active.get_squares() {
+                    tetris.board[row as usize][col as usize] = u8::from(tetris.active.tetromino);
                 }
                 // Updating the active piece.
-                self.active = ActivePiece::new(self.next_piece());
+                tetris.active = ActivePiece::new(tetris.next_piece());
+            }
+            if self.delay_count < LOCK_DELAY && !forced {
+                // Piece's won't lock if they're not being forced to and they're under
+                // the required frame count.
+                self.delay_count += 1;
+                false
+            } else if forced || self.delay_count >= LOCK_DELAY {
+                lock(self);
                 true
             } else {
-                false
+                // Here we check to see if the piece is immobile. If it is, we lock it.
+                let mut cloned = self.active.clone();
+                if !(cloned.shift(true, &self.board)
+                    && cloned.shift(false, &self.board)
+                    && cloned.rotate(true, &self.board)
+                    && cloned.rotate(false, &self.board))
+                {
+                    lock(self);
+                    true
+                } else {
+                    false
+                }
             }
         }
 
