@@ -458,7 +458,7 @@ pub mod tetris {
                     if row < 20 {
                         self.is_game_over = true;
                     }
-                    self.board[row as usize][col as usize] = self.active.tetromino as u8;
+                    self.board[row as usize][col as usize] = u8::from(self.active.tetromino);
                 }
                 if let Some(next_tet) = self.next_piece() {
                     self.active = ActivePiece::new(next_tet);
@@ -475,7 +475,7 @@ pub mod tetris {
                 if row < 20 {
                     self.is_game_over = true;
                 }
-                self.board[row as usize][col as usize] = self.active.tetromino as u8;
+                self.board[row as usize][col as usize] = u8::from(self.active.tetromino);
             }
             if let Some(next_tet) = self.next_piece() {
                 self.active = ActivePiece::new(next_tet);
@@ -553,7 +553,8 @@ pub mod tetris {
                 }
             }
             // Rendering the "Queue" Area.
-            let mut queue: VecDeque<String> = self.queue.iter().map(|t| t.to_string()).collect();
+            let mut queue: VecDeque<String> =
+                self.queue.iter().rev().map(|t| t.to_string()).collect();
             // Top of the Tetris Game.
             writeln!(f, "{:>7}{:>34}", "HELD", "NEXT")?;
             let mut queue_string = queue.pop_back().unwrap_or(String::new());
