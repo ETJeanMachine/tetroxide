@@ -485,14 +485,14 @@ pub mod tetris {
             self.gravity_count += 1.0 / (time * 60.0);
             self.delay_count += 1;
             // Getting the total number of cells we need to advance...
-            for _i in 0..self.gravity_count as u8 {
+            for _ in 0..self.gravity_count as u8 {
                 self.gravity_count -= 1.0;
-            }
-            // Trying to drop the piece - if not, we try to lock it.
-            if !self.active.soft_drop(&self.board) {
-                self.try_lock(false);
-            } else {
-                self.delay_count = 0;
+                // Trying to drop the piece - if not, we try to lock it.
+                if !self.active.soft_drop(&self.board) {
+                    self.try_lock(false);
+                } else {
+                    self.delay_count = 0;
+                }
             }
         }
 
