@@ -373,6 +373,7 @@ pub mod tetris {
         gravity_count: f64,
         pub score: u32,
         pub level: u8,
+        pub lines: u32,
         pub is_game_over: bool,
     }
     impl Default for Tetris {
@@ -400,6 +401,7 @@ pub mod tetris {
                 gravity_count: 0.0,
                 score: 0,
                 level: 0,
+                lines: 0,
                 is_game_over: false,
             }
         }
@@ -452,6 +454,7 @@ pub mod tetris {
                 gravity_count: 0.0,
                 score: 0,
                 level: 0,
+                lines: 0,
                 is_game_over: false,
             }
         }
@@ -499,6 +502,7 @@ pub mod tetris {
         /// Call the active piece's soft_drop() to update its position if possible.
         /// If not, write piece to game board and draw new piece.
         pub fn soft_drop(&mut self) {
+            self.score += 1;
             if !self.active.soft_drop(&self.board) {
                 self.try_lock(true);
             }
@@ -507,7 +511,9 @@ pub mod tetris {
         /// Immediately drop piece as far as it will go, and solidify at final
         /// position.
         pub fn hard_drop(&mut self) {
-            while self.active.soft_drop(&self.board) {}
+            while self.active.soft_drop(&self.board) {
+                self.score += 2;
+            }
             if self.try_lock(true) {
                 self.try_clear();
             }
@@ -593,7 +599,7 @@ pub mod tetris {
             }
         }
 
-        /// Erase filled rows and move rows above down; as well as
+        /// Erase filled rows and move rows above down; as well as update the score to match.
         fn try_clear(&mut self) {
             for row in (0..MAX_ROW).rev() {
                 loop {
@@ -642,23 +648,29 @@ pub mod tetris {
                 self.queue.iter().rev().map(|t| t.to_string()).collect();
             // Top of the Tetris Game.
             writeln!(f, "{:>7}{:>34}", "HELD", "NEXT")?;
+            let score_info = format!(
+                "{:10}\n{:->9}\n{:<10}\n\n{:10}\n{:->9}\n{:<10}\n\n{:10}\n{:->9}\n{:<10}",
+                "SCORE", "", self.score, "LEVEL", "", self.level, "LINES", "", self.lines
+            );
+            let mut score_lines = score_info.lines();
             let mut queue_string = queue.pop_back().unwrap_or(String::new());
             let mut queue_lines = queue_string.lines();
             for row in 0..20 {
-                let (held_render, queue_render) = if row > 0 {
-                    (
-                        held_lines.next().unwrap_or(""),
-                        queue_lines.next().unwrap_or(""),
-                    )
-                } else {
-                    ("", "")
-                };
+                let (mut left_render, mut right_render) = ("", "");
+                if row > 0 {
+                    left_render = if row >= 4 {
+                        score_lines.next().unwrap_or("")
+                    } else {
+                        held_lines.next().unwrap_or("")
+                    };
+                    right_render = queue_lines.next().unwrap_or("");
+                }
                 writeln!(
                     f,
                     "{:^10}<!{}!>{:^10}",
-                    held_render, board_render[row], queue_render,
+                    left_render, board_render[row], right_render,
                 )?;
-                if queue_render.is_empty() && !queue_string.is_empty() && row != 0 {
+                if right_render.is_empty() && !queue_string.is_empty() && row != 0 {
                     queue_string = queue.pop_back().unwrap_or(String::new());
                     queue_lines = queue_string.lines();
                 }
