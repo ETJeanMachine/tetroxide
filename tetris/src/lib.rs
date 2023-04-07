@@ -18,13 +18,13 @@ pub mod tetris {
     /// - `S`/`Z` Pieces, also called "skew".
     #[derive(Debug, Clone, Copy, EnumIter)]
     pub enum Tetromino {
-        I = 1,
-        O = 2,
-        T = 3,
-        J = 4,
-        L = 5,
-        S = 6,
-        Z = 7,
+        I,
+        O,
+        T,
+        J,
+        L,
+        S,
+        Z,
     }
     impl Tetromino {
         /// Gives the "shape" of a tetromino, given the default origin state is
@@ -87,13 +87,13 @@ pub mod tetris {
     impl From<Tetromino> for u8 {
         fn from(val: Tetromino) -> Self {
             match val {
-                Tetromino::I => 0,
-                Tetromino::O => 1,
-                Tetromino::T => 2,
-                Tetromino::J => 3,
-                Tetromino::L => 4,
-                Tetromino::S => 5,
-                Tetromino::Z => 6,
+                Tetromino::I => 1,
+                Tetromino::O => 2,
+                Tetromino::T => 3,
+                Tetromino::J => 4,
+                Tetromino::L => 5,
+                Tetromino::S => 6,
+                Tetromino::Z => 7,
             }
         }
     }
