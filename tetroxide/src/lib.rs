@@ -48,8 +48,6 @@ pub mod tetroxide {
 
             execute!(stdout, Hide, EnterAlternateScreen, EnableMouseCapture)?;
 
-            self.tetris.soft_drop();
-            self.tetris.soft_drop();
             println!("{}", self.tetris);
             let input = format!("{}", self.tetris);
             backend::write(&mut stdout, input.as_str(), 90, (0, 0), 15)?;
@@ -76,10 +74,7 @@ pub mod tetroxide {
                     }
                 }
 
-                if frame_count % 48 == 0 {
-                    self.tetris.soft_drop();
-                    self.tetris.clear_lines();
-                }
+                self.tetris.frame_advance();
 
                 self.looper.loop_sleep();
                 frame_count += 1;

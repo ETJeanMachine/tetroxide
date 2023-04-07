@@ -365,10 +365,12 @@ pub mod tetris {
         board: [[u8; MAX_COL]; MAX_ROW],
         active: ActivePiece,
         bag: Bag,
-        held: Option<Tetromino>,
+        held: (Option<Tetromino>, bool),
         queue: VecDeque<Tetromino>,
-        score: u32,
-        level: u8,
+        frame_count: u8,
+        gravity_count: f64,
+        pub score: u32,
+        pub level: u8,
         pub is_game_over: bool,
     }
     impl Default for Tetris {
@@ -390,8 +392,10 @@ pub mod tetris {
                 board,
                 active,
                 bag,
-                held: None,
+                held: (None, false),
                 queue,
+                frame_count: 0,
+                gravity_count: 0.0,
                 score: 0,
                 level: 0,
                 is_game_over: false,
@@ -399,6 +403,8 @@ pub mod tetris {
         }
     }
 
+    /// The number of frames we want to wait before trying to lock a piece.
+    const LOCK_DELAY: u8 = 30;
     impl Tetris {
         pub fn new(
             provided_board: Option<[[u8; MAX_COL]; MAX_ROW]>,
@@ -437,38 +443,61 @@ pub mod tetris {
             Tetris {
                 board,
                 active,
-                held: None,
+                held: (None, false),
                 queue,
                 bag,
+                frame_count: 0,
+                gravity_count: 0.0,
                 score: 0,
                 level: 0,
                 is_game_over: false,
             }
         }
 
-        /// Return the next piece in the queue and pull a new piece
-        /// from the bag to replace it
-        fn next_piece(&mut self) -> Option<Tetromino> {
-            if let Some(tet) = self.bag.next() {
-                self.queue.push_back(tet);
+        pub fn set_level(&mut self, level: u8) {
+            if level >= 15 {
+                self.level = 15;
+            } else {
+                self.level = level;
             }
+        }
 
-            self.queue.pop_front()
+        /// This advances forward the game by a singular frame.
+        /// The game assumes that 60 frames occur per second,
+        /// and additionally, internally calculates the speed at which
+        /// blocks will fall in this method.
+        ///
+        /// The standard for figuring out the speed of the blocks is based upon
+        /// the Tetris guidelines, which uses the rules from [Tetris Worlds]
+        /// (https://tetris.fandom.com/wiki/Tetris_Worlds). So, this formula:
+        ///
+        /// ```
+        /// let time = f64::powf(0.8 - ((level - 1.0) * 0.007), level - 1.0);
+        /// ```
+        ///
+        /// Where `time` refers to the amount of time spent in a single cell.
+        pub fn frame_advance(&mut self) {
+            // Computes the "gravity" of the current level.
+            let l = self.level as f64 - 1.0;
+            let time = f64::powf(0.8 - (l * 0.007), l);
+            self.gravity_count += 1.0 / (time * 60.0);
+            self.frame_count += 1;
+            // Getting the total number of cells we need to advance...
+            for _i in 0..self.gravity_count as u8 {
+                self.gravity_count -= 1.0;
+                self.soft_drop();
+            }
+            // Resetting the frame counter if we've done 60 frames.
+            if self.frame_count % 60 == 0 {
+                self.frame_count = 0;
+            }
         }
 
         /// Call the active piece's soft_drop() to update its position if possible.
         /// If not, write piece to game board and draw new piece.
         pub fn soft_drop(&mut self) {
             if !self.active.soft_drop(&self.board) {
-                for (row, col) in self.active.get_squares() {
-                    if row < 20 {
-                        self.is_game_over = true;
-                    }
-                    self.board[row as usize][col as usize] = self.active.tetromino as u8;
-                }
-                if let Some(next_tet) = self.next_piece() {
-                    self.active = ActivePiece::new(next_tet);
-                }
+                self.try_lock(true);
             }
         }
 
@@ -476,37 +505,78 @@ pub mod tetris {
         /// position.
         pub fn hard_drop(&mut self) {
             while self.active.soft_drop(&self.board) {}
-
-            for (row, col) in self.active.get_squares() {
-                if row < 20 {
-                    self.is_game_over = true;
-                }
-                self.board[row as usize][col as usize] = self.active.tetromino as u8;
-            }
-            if let Some(next_tet) = self.next_piece() {
-                self.active = ActivePiece::new(next_tet);
+            if self.try_lock(true) {
+                self.try_clear();
             }
         }
 
         /// Call the active piece's rotate()
         pub fn rotate(&mut self, clockwise: bool) {
             self.active.rotate(clockwise, &self.board);
+            // TODO: Logic for auto-locking once in an immobile state.
+            if self.try_lock(false) {
+                self.try_clear();
+            }
         }
 
+        /// Shifts a piece to the left/right.
         pub fn shift(&mut self, left: bool) {
             self.active.shift(left, &self.board);
+            if self.try_lock(false) {
+                self.try_clear();
+            }
         }
 
-        pub fn try_lock(&mut self) {
-            
+        /// Hold functionality
+        /// If no piece is held, place active piece in hold and draw new piece
+        /// If something is held, swap held & active piece.
+        ///
+        /// A piece can only be removed from held once a lock has occurred.
+        pub fn hold(&mut self) {
+            if let (Some(tetromino), true) = self.held {
+                self.held = (Some(self.active.tetromino), false);
+                self.active = ActivePiece::new(tetromino);
+            } else {
+                self.held = (Some(self.active.tetromino), false);
+                self.active = ActivePiece::new(self.next_piece());
+            }
         }
 
-        /// Erase filled rows and move rows above down; as well as 
-        pub fn clear_lines(&mut self) {
+        /// Return the next piece in the queue and pull a new piece
+        /// from the bag to replace it
+        fn next_piece(&mut self) -> Tetromino {
+            let popped = self.queue.pop_front();
+            if let Some(tet) = self.bag.next() {
+                self.queue.push_back(tet);
+            }
+            popped.unwrap()
+        }
+
+        /// `try_lock` attempts to lock the piece onto the board. It takes in a bool
+        /// specifying whether or not we want to force the locking of the piece - as
+        /// for certain moves (such as T-spins and hard drops) we want this to occur.
+        fn try_lock(&mut self, forced: bool) -> bool {
+            if self.frame_count < LOCK_DELAY && !forced {
+                false
+            } else if forced {
+                self.frame_count = 0;
+                // Locking the piece onto the board.
+                for (row, col) in self.active.get_squares() {
+                    self.board[row as usize][col as usize] = u8::from(self.active.tetromino);
+                }
+                // Updating the active piece.
+                self.active = ActivePiece::new(self.next_piece());
+                true
+            } else {
+                false
+            }
+        }
+
+        /// Erase filled rows and move rows above down; as well as
+        fn try_clear(&mut self) {
             for row in (0..MAX_ROW).rev() {
                 loop {
                     let is_solid = self.board[row].iter().all(|&itm| itm != 0);
-
                     if is_solid {
                         self.board[row].iter_mut().for_each(|x| *x = 0);
 
@@ -521,27 +591,11 @@ pub mod tetris {
                 }
             }
         }
-
-        /// Hold functionality
-        /// If no piece is held, place active piece in hold and draw new piece
-        /// If something is held, swap held & active piece
-        pub fn hold(&mut self) {
-            if self.held.is_none() {
-                self.held = Some(self.active.tetromino);
-
-                if let Some(next) = self.next_piece() {
-                    self.active = ActivePiece::new(next);
-                }
-            } else if let Some(temp_tet) = self.held {
-                self.held = Some(self.active.tetromino);
-                self.active = ActivePiece::new(temp_tet);
-            }
-        }
     }
     impl Display for Tetris {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             // Render the "Held" Area.
-            let held_str = self.held.map_or(String::new(), |h| h.to_string());
+            let held_str = self.held.0.map_or(String::new(), |h| h.to_string());
             let mut held_lines = held_str.lines();
             // Rendering the gameboard area.
             let mut board_render = Vec::with_capacity(20);
