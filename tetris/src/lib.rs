@@ -367,6 +367,8 @@ pub mod tetris {
         bag: Bag,
         held: Option<Tetromino>,
         queue: VecDeque<Tetromino>,
+        score: u32,
+        level: u8,
         pub is_game_over: bool,
     }
     impl Default for Tetris {
@@ -387,9 +389,11 @@ pub mod tetris {
             Tetris {
                 board,
                 active,
+                bag,
                 held: None,
                 queue,
-                bag,
+                score: 0,
+                level: 0,
                 is_game_over: false,
             }
         }
@@ -436,6 +440,8 @@ pub mod tetris {
                 held: None,
                 queue,
                 bag,
+                score: 0,
+                level: 0,
                 is_game_over: false,
             }
         }
@@ -491,7 +497,11 @@ pub mod tetris {
             self.active.shift(left, &self.board);
         }
 
-        /// Erase filled rows and move rows above down
+        pub fn try_lock(&mut self) {
+            
+        }
+
+        /// Erase filled rows and move rows above down; as well as 
         pub fn clear_lines(&mut self) {
             for row in (0..MAX_ROW).rev() {
                 loop {
