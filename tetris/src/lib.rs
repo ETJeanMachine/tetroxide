@@ -492,7 +492,7 @@ pub mod tetris {
                 self.gravity_count -= 1.0;
                 // Trying to drop the piece - if not, we try to lock it.
                 if !self.active.soft_drop(&self.board) {
-                    self.try_lock(false);
+                    self.try_lock();
                 } else {
                     self.delay_count = 0;
                 }
@@ -504,7 +504,7 @@ pub mod tetris {
         pub fn soft_drop(&mut self) {
             self.score += 1;
             if !self.active.soft_drop(&self.board) {
-                self.try_lock(true);
+                self.lock();
             }
         }
 
@@ -514,16 +514,15 @@ pub mod tetris {
             while self.active.soft_drop(&self.board) {
                 self.score += 2;
             }
-            if self.try_lock(true) {
-                self.try_clear();
-            }
+            self.lock();
+            self.try_clear();
         }
 
         /// Call the active piece's rotate()
         pub fn rotate(&mut self, clockwise: bool) {
             self.active.rotate(clockwise, &self.board);
             // TODO: Logic for auto-locking once in an immobile state.
-            if self.try_lock(false) {
+            if self.try_lock() {
                 self.try_clear();
             }
         }
@@ -531,7 +530,7 @@ pub mod tetris {
         /// Shifts a piece to the left/right.
         pub fn shift(&mut self, left: bool) {
             self.active.shift(left, &self.board);
-            if self.try_lock(false) {
+            if self.try_lock() {
                 self.try_clear();
             }
         }
@@ -564,25 +563,12 @@ pub mod tetris {
         /// `try_lock` attempts to lock the piece onto the board. It takes in a bool
         /// specifying whether or not we want to force the locking of the piece - as
         /// for certain moves (such as T-spins and hard drops) we want this to occur.
-        fn try_lock(&mut self, forced: bool) -> bool {
-            /// Private "lock" function to be used for when it successfully does lock in place.
-            fn lock(tetris: &mut Tetris) {
-                // Locking the piece onto the board.
-                for (row, col) in tetris.active.get_squares() {
-                    tetris.board[row as usize][col as usize] = u8::from(tetris.active.tetromino);
-                }
-                // Updating the active piece.
-                tetris.active = ActivePiece::new(tetris.next_piece());
-                tetris.held = (tetris.held.0, true)
-            }
-            if self.delay_count < LOCK_DELAY && !forced {
+        fn try_lock(&mut self) -> bool {
+            if self.delay_count < LOCK_DELAY {
                 // Piece's won't lock if they're not being forced to and they're under
                 // the required frame count.
                 self.delay_count += 1;
                 false
-            } else if forced || self.delay_count >= LOCK_DELAY {
-                lock(self);
-                true
             } else {
                 // Here we check to see if the piece is immobile. If it is, we lock it.
                 let mut cloned = self.active;
@@ -591,12 +577,28 @@ pub mod tetris {
                     && cloned.rotate(true, &self.board)
                     && cloned.rotate(false, &self.board))
                 {
-                    lock(self);
+                    self.lock();
                     true
                 } else {
                     false
                 }
             }
+        }
+
+        /// Locks the active piece immediately in place.
+        fn lock(&mut self) {
+            // Locking the piece onto the board.
+            for (row, col) in self.active.get_squares() {
+                // Updating the game over state if we're locking above 20.
+                if !self.is_game_over {
+                    self.is_game_over = row <= 20
+                };
+                self.board[row as usize][col as usize] = u8::from(self.active.tetromino);
+            }
+            // Updating the active piece.
+            self.active = ActivePiece::new(self.next_piece());
+            // Allowing the held piece to be usable (if not already).
+            self.held = (self.held.0, true)
         }
 
         /// Erase filled rows and move rows above down; as well as update the score to match.
