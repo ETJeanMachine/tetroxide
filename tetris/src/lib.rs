@@ -693,6 +693,7 @@ pub mod tetris {
                 }
             }
             // Bottom of the board.
+            writeln!(f, "{:>12}{:=>20}!>", "<!", "")?;
             writeln!(f, "{:>32}", "\\/".repeat(10))?;
             Ok(())
         }
