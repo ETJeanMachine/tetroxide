@@ -617,7 +617,8 @@ pub mod tetris {
                 }
             }
             // Rendering the "Queue" Area.
-            let mut queue: VecDeque<String> = self.queue.iter().map(|t| t.to_string()).collect();
+            let mut queue: VecDeque<String> =
+                self.queue.iter().rev().map(|t| t.to_string()).collect();
             // Top of the Tetris Game.
             writeln!(f, "{:>7}{:>34}", "HELD", "NEXT")?;
             let mut queue_string = queue.pop_back().unwrap_or(String::new());
