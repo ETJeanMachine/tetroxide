@@ -539,7 +539,7 @@ pub mod tetris {
             if let (Some(tetromino), true) = self.held {
                 self.held = (Some(self.active.tetromino), false);
                 self.active = ActivePiece::new(tetromino);
-            } else {
+            } else if self.held.0.is_none() {
                 self.held = (Some(self.active.tetromino), false);
                 self.active = ActivePiece::new(self.next_piece());
             }
@@ -567,6 +567,7 @@ pub mod tetris {
                 }
                 // Updating the active piece.
                 tetris.active = ActivePiece::new(tetris.next_piece());
+                tetris.held = (tetris.held.0, true)
             }
             if self.delay_count < LOCK_DELAY && !forced {
                 // Piece's won't lock if they're not being forced to and they're under
