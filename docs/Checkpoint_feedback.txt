@@ -1,0 +1,22 @@
+tetroxide
+
+Great progress and good checkpoint document.
+
+Seems like a lot of good progress has been made on the project.  Good
+division into a general `tetris` crate separate from a `tetroxide` UI
+crate.
+
+Looks like some subtle code is needed to accurately replicate Tetris;
+the `Bag` for ensuring a consistent sequence of random tetronimos; the
+various rules for rotation.
+
+`crossterm` and `tui` seem like good choices.  Final writeup might
+include a brief analysis of how well they worked for the project.
+
+Look over the rubric for the final project writeup
+(https://www.cs.rit.edu/~mtf/teaching/20225/psr/project.html#final_project)
+and think about how the features of Rust were used to good effect in
+the project.
+
+
+Score: 10/10
