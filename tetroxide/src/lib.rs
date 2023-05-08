@@ -69,16 +69,18 @@ pub mod tetroxide {
             // println!("{}", self.tetris);
             // let input = format!("{}", self.tetris);
             // backend::write(&mut stdout, input.as_str(), 90, (0, 0), 15)?;
-
+            let mut prev_str = String::new();
             while !self.tetris.is_game_over {
-                let mut stdout_lock = stdout.lock();
-                execute!(stdout_lock, terminal::Clear(terminal::ClearType::All))?;
-                // trying to write it line by line
-                for (r, l) in self.tetris.to_string().lines().enumerate() {
-                    execute!(stdout_lock, cursor::MoveTo(0, r as u16))?;
-                    writeln!(stdout_lock, "{}", l)?;
+                if self.tetris.to_string() != prev_str {
+                    let mut stdout_lock = stdout.lock();
+                    execute!(stdout_lock, terminal::Clear(terminal::ClearType::All))?;
+                    for (r, l) in self.tetris.to_string().lines().enumerate() {
+                        execute!(stdout_lock, cursor::MoveTo(0, r as u16))?;
+                        writeln!(stdout_lock, "{}", l)?;
+                    }
+                    stdout_lock.flush()?;
                 }
-                stdout_lock.flush()?;
+                prev_str = self.tetris.to_string();
                 let event_waiting = poll(Duration::from_secs(0))?;
                 let event = if event_waiting {
                     read()?
