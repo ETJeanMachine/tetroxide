@@ -1,17 +1,22 @@
 pub mod tetroxide {
     use async_std::task;
     use crossterm::{
-        cursor::{Hide, Show, self},
-        event::{poll, read, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind},
-        execute,
-        terminal::{
-            disable_raw_mode, enable_raw_mode, Clear, EnterAlternateScreen, LeaveAlternateScreen, self,
+        cursor::{self, Hide, Show},
+        event::{
+            poll, read, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind, ModifierKeyCode,
         },
-        Result, style::Print,
+        execute,
+        style::Print,
+        terminal::{
+            self, disable_raw_mode, enable_raw_mode, Clear, EnterAlternateScreen,
+            LeaveAlternateScreen,
+        },
+        Result,
     };
     use std::{
+        fmt::format,
         io::{self, stdout, Write},
-        time::Duration, fmt::format,
+        time::Duration,
     };
     use tetris::tetris::Tetris;
     use tui::{
@@ -66,11 +71,10 @@ pub mod tetroxide {
             // backend::write(&mut stdout, input.as_str(), 90, (0, 0), 15)?;
 
             while !self.tetris.is_game_over {
-                let tet_str = format!("{}", self.tetris);
                 let mut stdout_lock = stdout.lock();
                 execute!(stdout_lock, terminal::Clear(terminal::ClearType::All))?;
                 // trying to write it line by line
-                for (r, l) in tet_str.lines().enumerate() {
+                for (r, l) in self.tetris.to_string().lines().enumerate() {
                     execute!(stdout_lock, cursor::MoveTo(0, r as u16))?;
                     writeln!(stdout_lock, "{}", l)?;
                 }
@@ -86,13 +90,25 @@ pub mod tetroxide {
                     match kind {
                         KeyEventKind::Press => match code {
                             KeyCode::Esc => break,
-                            KeyCode::Char('a') => self.tetris.shift(true),
-                            KeyCode::Char('d') => self.tetris.shift(false),
+                            KeyCode::Char('a') | KeyCode::Left => self.tetris.shift(true),
+                            KeyCode::Char('d') | KeyCode::Right => self.tetris.shift(false),
+                            KeyCode::Char('w') | KeyCode::Up => self.tetris.rotate(true),
+                            KeyCode::Char('z')
+                            | KeyCode::Modifier(ModifierKeyCode::LeftControl)
+                            | KeyCode::Modifier(ModifierKeyCode::RightControl) => {
+                                self.tetris.rotate(false)
+                            }
+                            KeyCode::Char('s') | KeyCode::Down => self.tetris.soft_drop(),
+                            KeyCode::Char(' ') => self.tetris.hard_drop(),
+                            KeyCode::Char('c')
+                            | KeyCode::Modifier(ModifierKeyCode::LeftShift)
+                            | KeyCode::Modifier(ModifierKeyCode::RightShift) => self.tetris.hold(),
                             _ => {}
                         },
                         _ => {}
                     }
                 }
+                self.tetris.frame_advance();
                 task::sleep(Duration::from_secs_f32(1.0 / 60.0)).await;
             }
 
