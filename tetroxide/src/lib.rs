@@ -16,12 +16,13 @@ pub mod tetroxide {
     use std::{
         fmt::format,
         io::{self, stdout, Write},
-        time::Duration,
+        time::{Duration, Instant},
+        vec,
     };
     use tetris::tetris::Tetris;
     use tui::{
         backend::{Backend, CrosstermBackend},
-        layout::{Alignment, Constraint, Direction, Layout},
+        layout::{Alignment, Constraint, Direction, Layout, Rect},
         style::{Color, Style},
         text::{Span, Spans, Text},
         widgets::{Block, BorderType, Borders, Paragraph},
@@ -50,6 +51,21 @@ pub mod tetroxide {
         }
     }
 
+    fn get_style(tet: u8) -> Style {
+        let color = match tet {
+            1 => Color::Cyan,
+            2 => Color::Yellow,
+            3 => Color::Magenta,
+            4 => Color::Blue,
+            5 => Color::White,
+            6 => Color::Green,
+            7 => Color::Red,
+            8 => Color::Gray,
+            _ => Color::Reset,
+        };
+        Style::default().fg(color)
+    }
+
     impl Game {
         pub fn new() -> Self {
             Game {
@@ -58,20 +74,6 @@ pub mod tetroxide {
         }
 
         fn draw_game(&self) -> Text {
-            fn get_style(tet: u8) -> Style {
-                let color = match tet {
-                    1 => Color::Cyan,
-                    2 => Color::Yellow,
-                    3 => Color::Magenta,
-                    4 => Color::Blue,
-                    5 => Color::White,
-                    6 => Color::Green,
-                    7 => Color::Red,
-                    8 => Color::Gray,
-                    _ => Color::Reset,
-                };
-                Style::default().fg(color)
-            }
             let mut text = Text::default();
             let board = self.tetris.get_state();
             for r in 0..20 {
@@ -85,9 +87,13 @@ pub mod tetroxide {
                         }
                     })
                     .collect();
-                let spans: Spans = Spans::from(s_vec);
+                let mut spans: Spans = Spans::from(vec![Span::raw("<!")]);
+                spans.0.extend(s_vec);
+                spans.0.push(Span::raw("!>"));
                 text.extend(Text::from(spans));
             }
+            text.extend(Text::from(format!("<!{}!>", "=".repeat(20))));
+            text.extend(Text::from("\\/".repeat(10)));
             text
         }
 
@@ -105,17 +111,86 @@ pub mod tetroxide {
             let backend = CrosstermBackend::new(stdout);
             let mut terminal = Terminal::new(backend)?;
             // Render the widget
-            self.tetris.level = 11;
             loop {
-                let game = Paragraph::new(self.draw_game())
-                    .block(Block::default().title("Welcome").borders(Borders::ALL));
+                let now = Instant::now();
+                let game_par = Paragraph::new(self.draw_game()).alignment(Alignment::Center);
+                let (held, h_tet) = self.tetris.get_held();
+                let held_par = Paragraph::new(Text::styled(held, get_style(h_tet)))
+                    .alignment(Alignment::Center)
+                    .block(
+                        Block::default()
+                            .borders(Borders::all())
+                            .title("HELD")
+                            .title_alignment(Alignment::Center),
+                    );
+                let score_par = Paragraph::new(Text::from(format!("{}", self.tetris.score)))
+                    .alignment(Alignment::Center)
+                    .block(
+                        Block::default()
+                            .borders(Borders::all())
+                            .title("SCORE")
+                            .title_alignment(Alignment::Center),
+                    );
+                let level_par = Paragraph::new(Text::from(format!("{}", self.tetris.level)))
+                    .alignment(Alignment::Center)
+                    .block(
+                        Block::default()
+                            .borders(Borders::all())
+                            .title("LEVEL")
+                            .title_alignment(Alignment::Center),
+                    );
+                let lines_par = Paragraph::new(Text::from(format!("{}", self.tetris.lines)))
+                    .alignment(Alignment::Center)
+                    .block(
+                        Block::default()
+                            .borders(Borders::all())
+                            .title("LINES")
+                            .title_alignment(Alignment::Center),
+                    );
+                let mut next_text = Text::default();
+                for tet in self.tetris.get_queue() {
+                    next_text.extend(Text::styled(tet.to_string(), get_style(tet as u8)));
+                    next_text.extend(Text::raw("\n"));
+                }
+                let queue_par = Paragraph::new(next_text)
+                    .alignment(Alignment::Center)
+                    .block(
+                        Block::default()
+                            .borders(Borders::all())
+                            .title("NEXT")
+                            .title_alignment(Alignment::Center),
+                    );
+                // DRAWING TO THE TERMINAL
                 terminal.draw(|f| {
-                    let chunks = Layout::default()
+                    let layout = Layout::default()
                         .direction(Direction::Horizontal)
-                        .margin(0)
-                        .constraints([Constraint::Length(40)].as_ref())
+                        .constraints([
+                            Constraint::Max(10),
+                            Constraint::Max(24),
+                            Constraint::Max(10),
+                            Constraint::Max(0)
+                        ])
                         .split(f.size());
-                    f.render_widget(game, chunks[0]);
+                    let stats_layout = Layout::default()
+                        .direction(Direction::Vertical)
+                        .constraints([
+                            Constraint::Max(4),
+                            Constraint::Max(3),
+                            Constraint::Max(3),
+                            Constraint::Max(3),
+                            Constraint::Max(0),
+                        ])
+                        .split(layout[0]);
+                    let next_layout = Layout::default()
+                        .direction(Direction::Vertical)
+                        .constraints([Constraint::Max(13), Constraint::Max(0)])
+                        .split(layout[2]);
+                    f.render_widget(held_par, stats_layout[0]);
+                    f.render_widget(score_par, stats_layout[1]);
+                    f.render_widget(level_par, stats_layout[2]);
+                    f.render_widget(lines_par, stats_layout[3]);
+                    f.render_widget(game_par, layout[1]);
+                    f.render_widget(queue_par, next_layout[0]);
                 })?;
                 let event_waiting = poll(Duration::from_secs(0))?;
                 let event = if event_waiting {
@@ -146,7 +221,12 @@ pub mod tetroxide {
                     }
                 }
                 self.tetris.frame_advance();
-                task::sleep(Duration::from_secs_f32(1.0 / 60.0)).await;
+                let elapsed = Instant::now() - now;
+                let f_dur = Duration::from_micros(16667);
+                if elapsed > f_dur {
+                    continue;
+                }
+                task::sleep(f_dur - elapsed).await;
             }
 
             Ok(())
