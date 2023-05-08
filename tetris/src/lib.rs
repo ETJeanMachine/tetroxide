@@ -16,7 +16,7 @@ pub mod tetris {
     /// - `T` Pieces.
     /// - `L`/`J` Pieces.
     /// - `S`/`Z` Pieces, also called "skew".
-    #[derive(Debug, Clone, Copy, EnumIter)]
+    #[derive(Debug, Clone, Copy, EnumIter, PartialEq, Eq)]
     pub enum Tetromino {
         I = 1,
         O = 2,
@@ -172,6 +172,10 @@ pub mod tetris {
         }
         pub fn in_range(row: i32, col: i32) -> bool {
             row >= 0 && row < MAX_ROW as i32 && col >= 0 && col < MAX_COL as i32
+        }
+
+        pub fn in_safe_range(row: usize, col: usize) -> bool {
+            row >= 1 && row < (MAX_ROW - 1) && col >= 1 && col < (MAX_COL - 1)
         }
     }
 
@@ -547,8 +551,59 @@ pub mod tetris {
 
         /// Call the active piece's rotate()
         pub fn rotate(&mut self, clockwise: bool) {
-            self.active.rotate(clockwise, &self.board);
-            // TODO: Logic for auto-locking once in an immobile state.
+            let succ = self.active.rotate(clockwise, &self.board);
+
+            if succ && self.active.tetromino == Tetromino::T {
+                let new_pos = self.active.origin;
+                let front_count = match self.active.rotation {
+                    State::Up => {
+                        (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32 +
+                        (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32
+                    },
+                    State::Right => {
+                        (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32 +
+                        (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
+                    },
+                    State::Down => {
+                        (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32 +
+                        (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
+                    },
+                    State::Left => {
+                        (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32 +
+                        (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32
+                    }
+                };
+
+                let back_count = 
+                    if !Pos::in_safe_range(new_pos.0, new_pos.1) {
+                        2
+                    } else {
+                        match self.active.rotation {
+                            State::Up => {
+                                (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32 +
+                                (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
+                            },
+                            State::Right => {
+                                (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32 +
+                                (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32
+                            },
+                            State::Down => {
+                                (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32 +
+                                (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32
+                            },
+                            State::Left => {
+                                (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32 +
+                                (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
+                            }
+                        }
+                    };
+
+                if front_count == 2 && back_count == 2 {
+                    self.score += 400 * self.level;
+                } else if front_count == 1 && back_count == 2 {
+                    self.score += 100 * self.level;
+                }
+            }
             self.try_lock(false);
         }
 
