@@ -476,12 +476,12 @@ pub mod tetris {
             let l = self.level as f64 - 1.0;
             let time = f64::powf(0.8 - (l * 0.007), l);
             self.gravity_count += 1.0 / (time * 60.0);
-            self.delay_count += 1;
             // Getting the total number of cells we need to advance...
             for _ in 0..self.gravity_count as u8 {
                 self.gravity_count -= 1.0;
                 // Trying to drop the piece - if not, we try to lock it.
                 if !self.active.soft_drop(&self.board) {
+                    self.delay_count += 1;
                     self.try_lock();
                 } else {
                     self.delay_count = 0;
@@ -549,10 +549,10 @@ pub mod tetris {
         /// specifying whether or not we want to force the locking of the piece - as
         /// for certain moves (such as T-spins and hard drops) we want this to occur.
         fn try_lock(&mut self) {
-            if self.delay_count < LOCK_DELAY {
+            if self.delay_count >= LOCK_DELAY {
                 // Piece's won't lock if they're not being forced to and they're under
                 // the required frame count.
-                self.delay_count += 1;
+                self.lock();
             } else {
                 // Here we check to see if the piece is immobile. If it is, we lock it.
                 for i in 0..4 {
