@@ -509,16 +509,21 @@ pub mod tetris {
             let l = self.level as f64 - 1.0;
             let time = f64::powf(0.8 - (l * 0.007), l);
             self.gravity_count += 1.0 / (time * 60.0);
+            // Computing the number of frames delayed by
+            self.delay_count += 1;
+            self.delay_count %= 60;
+            // checking on a clone of the board to see if we can soft drop...
+            let mut a_clone = self.active.clone();
+            if !a_clone.soft_drop(&self.board.clone()) {
+                self.try_lock(true);
+            } else {
+                self.delay_count = 0;
+            }
             // Getting the total number of cells we need to advance...
             for _ in 0..self.gravity_count as u8 {
                 self.gravity_count -= 1.0;
                 // Trying to drop the piece - if not, we try to lock it.
-                if !self.active.soft_drop(&self.board) {
-                    self.delay_count += 1;
-                    self.try_lock();
-                } else {
-                    self.delay_count = 0;
-                }
+                self.active.soft_drop(&self.board);
             }
         }
 
@@ -544,13 +549,13 @@ pub mod tetris {
         pub fn rotate(&mut self, clockwise: bool) {
             self.active.rotate(clockwise, &self.board);
             // TODO: Logic for auto-locking once in an immobile state.
-            self.try_lock();
+            self.try_lock(false);
         }
 
         /// Shifts a piece to the left/right.
         pub fn shift(&mut self, left: bool) {
             self.active.shift(left, &self.board);
-            self.try_lock();
+            self.try_lock(false);
         }
 
         /// Hold functionality
@@ -581,8 +586,8 @@ pub mod tetris {
         /// `try_lock` attempts to lock the piece onto the board. It takes in a bool
         /// specifying whether or not we want to force the locking of the piece - as
         /// for certain moves (such as T-spins and hard drops) we want this to occur.
-        fn try_lock(&mut self) {
-            if self.delay_count >= LOCK_DELAY {
+        fn try_lock(&mut self, on_frame: bool) {
+            if self.delay_count >= LOCK_DELAY && on_frame {
                 // Piece's won't lock if they're not being forced to and they're under
                 // the required frame count.
                 self.lock();
