@@ -555,14 +555,20 @@ pub mod tetris {
                 self.delay_count += 1;
             } else {
                 // Here we check to see if the piece is immobile. If it is, we lock it.
-                let mut cloned = self.active;
-                if !(cloned.shift(true, &self.board)
-                    && cloned.shift(false, &self.board)
-                    && cloned.rotate(true, &self.board)
-                    && cloned.rotate(false, &self.board))
-                {
-                    self.lock();
+                for i in 0..4 {
+                    let mut cloned = self.active.clone();
+                    let v = match i {
+                        0 => cloned.shift(true, &self.board),
+                        1 => cloned.shift(false, &self.board),
+                        2 => cloned.rotate(true, &self.board),
+                        3 => cloned.rotate(false, &self.board),
+                        _ => return,
+                    };
+                    if v {
+                        return;
+                    }
                 }
+                self.lock();
             }
         }
 
