@@ -1,8 +1,8 @@
 use clap::Parser;
+use futures::executor::block_on;
 use std::io::{self, BufRead};
 use tetris::tetris::Tetris;
 use tetroxide::tetroxide::Game;
-use futures::executor::block_on;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

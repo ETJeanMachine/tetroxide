@@ -466,7 +466,7 @@ pub mod tetris {
         /// the Tetris guidelines, which uses the rules from [Tetris Worlds]
         /// (https://tetris.fandom.com/wiki/Tetris_Worlds). So, this formula:
         ///
-        /// ```
+        /// ```ignore
         /// let time = f64::powf(0.8 - ((level - 1.0) * 0.007), level - 1.0);
         /// ```
         ///
