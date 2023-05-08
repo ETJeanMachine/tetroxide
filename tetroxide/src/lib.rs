@@ -20,9 +20,12 @@ pub mod tetroxide {
     };
     use tetris::tetris::Tetris;
     use tui::{
-        backend::CrosstermBackend,
-        layout::{Constraint, Direction, Layout},
-        Terminal,
+        backend::{Backend, CrosstermBackend},
+        layout::{Alignment, Constraint, Direction, Layout},
+        style::{Color, Style},
+        text::{Span, Spans, Text},
+        widgets::{Block, BorderType, Borders, Paragraph},
+        Frame, Terminal,
     };
     use tui_input::backend::crossterm as backend;
     use tui_input::backend::crossterm::EventHandler;
@@ -54,40 +57,72 @@ pub mod tetroxide {
             }
         }
 
+        fn draw_game(&self) -> Text {
+            fn get_style(tet: u8) -> Style {
+                let color = match tet {
+                    1 => Color::Cyan,
+                    2 => Color::Yellow,
+                    3 => Color::Magenta,
+                    4 => Color::Blue,
+                    5 => Color::White,
+                    6 => Color::Green,
+                    7 => Color::Red,
+                    8 => Color::Gray,
+                    _ => Color::Reset,
+                };
+                Style::default().fg(color)
+            }
+            let mut text = Text::default();
+            let board = self.tetris.get_state();
+            for r in 0..20 {
+                let s_vec: Vec<_> = board[r + 20]
+                    .into_iter()
+                    .map(|x| {
+                        if x == 0 {
+                            Span::styled(" .", get_style(0))
+                        } else {
+                            Span::styled("[]", get_style(x))
+                        }
+                    })
+                    .collect();
+                let spans: Spans = Spans::from(s_vec);
+                text.extend(Text::from(spans));
+            }
+            text
+        }
+
         pub async fn run(&mut self) -> Result<()> {
-            enable_raw_mode()?;
-            let mut stdout = stdout();
-            execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
+            // let mut stdout = stdout();
+            // execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
 
             // let stdout = io::stdout();
             // let backend = CrosstermBackend::new(stdout);
             // let mut terminal = Terminal::new(backend)?;
             // terminal.clear()?;
-
-            // self.tetris.soft_drop();
-            // self.tetris.soft_drop();
-            // println!("{}", self.tetris);
-            // let input = format!("{}", self.tetris);
-            // backend::write(&mut stdout, input.as_str(), 90, (0, 0), 15)?;
-            let mut prev_str = String::new();
-            while !self.tetris.is_game_over {
-                if self.tetris.to_string() != prev_str {
-                    let mut stdout_lock = stdout.lock();
-                    execute!(stdout_lock, terminal::Clear(terminal::ClearType::All))?;
-                    for (r, l) in self.tetris.to_string().lines().enumerate() {
-                        execute!(stdout_lock, cursor::MoveTo(0, r as u16))?;
-                        writeln!(stdout_lock, "{}", l)?;
-                    }
-                    stdout_lock.flush()?;
-                }
-                prev_str = self.tetris.to_string();
+            enable_raw_mode()?;
+            let mut stdout = io::stdout();
+            execute!(stdout, EnterAlternateScreen)?;
+            let backend = CrosstermBackend::new(stdout);
+            let mut terminal = Terminal::new(backend)?;
+            // Render the widget
+            self.tetris.level = 11;
+            loop {
+                let game = Paragraph::new(self.draw_game())
+                    .block(Block::default().title("Welcome").borders(Borders::ALL));
+                terminal.draw(|f| {
+                    let chunks = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints([Constraint::Length(40)].as_ref())
+                        .split(f.size());
+                    f.render_widget(game, chunks[0]);
+                })?;
                 let event_waiting = poll(Duration::from_secs(0))?;
                 let event = if event_waiting {
                     read()?
                 } else {
                     Event::FocusLost
                 };
-
                 if let Event::Key(KeyEvent { code, kind, .. }) = event {
                     match kind {
                         KeyEventKind::Press => match code {
@@ -113,8 +148,6 @@ pub mod tetroxide {
                 self.tetris.frame_advance();
                 task::sleep(Duration::from_secs_f32(1.0 / 60.0)).await;
             }
-
-            disable_raw_mode()?;
 
             Ok(())
         }

@@ -457,6 +457,26 @@ pub mod tetris {
             }
         }
 
+        pub fn get_state(&self) -> [[u8; MAX_COL]; MAX_ROW] {
+            let mut b_clone = self.board.clone();
+            let mut ghost = self.active;
+            while ghost.soft_drop(&self.board) {}
+            let (g_squares, a_squares) = (ghost.get_squares(), self.active.get_squares());
+            for i in 0..4 {
+                let ((g_r, g_c), (a_r, a_c)) = (g_squares[i], a_squares[i]);
+                let (g_r, g_c, a_r, a_c) = (g_r as usize, g_c as usize, a_r as usize, a_c as usize);
+                // The ghost piece first.
+                if g_r >= 20 {
+                    b_clone[g_r][g_c] = 8;
+                }
+                // Then the active piece.
+                if a_r >= 20 {
+                    b_clone[a_r][a_c] = self.active.tetromino as u8;
+                }
+            }
+            b_clone
+        }
+
         /// This advances forward the game by a singular frame.
         /// The game assumes that 60 frames occur per second,
         /// and additionally, internally calculates the speed at which
