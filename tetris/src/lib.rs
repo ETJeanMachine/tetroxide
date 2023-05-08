@@ -481,6 +481,19 @@ pub mod tetris {
             b_clone
         }
 
+        pub fn get_held(&self) -> (String, u8) {
+            if let (Some(held), _) = self.held {
+                (format!("{}", held), held as u8)
+            } else {
+                (String::new(), 0)
+            }
+        }
+
+        pub fn get_queue(&self) -> [Tetromino; 4] {
+            let queue = self.queue.clone();
+            queue.into_iter().collect::<Vec<_>>().try_into().unwrap()
+        }
+
         /// This advances forward the game by a singular frame.
         /// The game assumes that 60 frames occur per second,
         /// and additionally, internally calculates the speed at which
