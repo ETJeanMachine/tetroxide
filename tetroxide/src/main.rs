@@ -2,6 +2,7 @@ use clap::Parser;
 use std::io::{self, BufRead};
 use tetris::tetris::Tetris;
 use tetroxide::tetroxide::Game;
+use futures::executor::block_on;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -10,64 +11,40 @@ struct Args {
     debug: bool,
 }
 
-// fn main() -> Result<(), std::io::Error> {
-//     let args = Args::parse();
-//     if args.debug {
-//         print!("\x1B[2J\x1B[1;1H");
-//         let mut tet = Tetris::default();
-//         // We can rotate and not drop for a limited amount of time in
-//         // debug mode.
-//         let mut frame_count = 0;
-//         const MAX_FRAMES: usize = 3;
-//         println!("{}", tet);
-//         while !tet.is_game_over {
-//             println!("Input: (w - hold | q & e - rotate | a & d - shift | s - hard drop | enter - soft drop)");
-//             let mut buffer = String::new();
-//             let stdin = io::stdin();
-//             let mut handle = stdin.lock();
-//             handle.read_line(&mut buffer)?;
-//             print!("\x1B[2J\x1B[1;1H");
-//             let lower = buffer.to_lowercase();
-//             let trimmed = lower.trim();
-//             match trimmed {
-//                 "w" => tet.hold(),
-//                 "q" | "e" => {
-//                     if trimmed == "q" {
-//                         tet.rotate(true);
-//                     } else {
-//                         tet.rotate(false)
-//                     }
-//                     if frame_count < MAX_FRAMES {
-//                         frame_count += 1;
-//                         println!("{}", tet);
-//                         continue;
-//                     }
-//                     frame_count = 0;
-//                 }
-//                 "a" => tet.shift(true),
-//                 "d" => tet.shift(false),
-//                 _ => {
-//                     if trimmed == "s" {
-//                         tet.hard_drop();
-//                     } else {
-//                         tet.soft_drop();
-//                     }
-//                     tet.clear_lines();
-//                     println!("{}", tet);
-//                     continue;
-//                 }
-//             }
-//             tet.soft_drop();
-//             println!("{}", tet);
-//         }
-//     } else {
-//         let mut game = Game::new();
-//         game.run()?;
-//     }
-//     Ok(())
-// }
-
-fn main() {
-    let mut game = Game::default();
-    _ = game.run();
+fn main() -> Result<(), std::io::Error> {
+    let args = Args::parse();
+    if args.debug {
+        print!("\x1B[2J\x1B[1;1H");
+        let mut tet = Tetris::default();
+        tet.set_level(13);
+        // We can rotate and not drop for a limited amount of time in
+        // debug mode.
+        println!("{}", tet);
+        while !tet.is_game_over {
+            println!("Input: (w - hold | q & e - rotate | a & d - shift | s - soft drop | z - hard drop)");
+            let mut buffer = String::new();
+            let stdin = io::stdin();
+            let mut handle = stdin.lock();
+            handle.read_line(&mut buffer)?;
+            print!("\x1B[2J\x1B[1;1H");
+            let lower = buffer.to_lowercase();
+            let trimmed = lower.trim();
+            match trimmed {
+                "w" => tet.hold(),
+                "q" => tet.rotate(true),
+                "e" => tet.rotate(false),
+                "a" => tet.shift(true),
+                "d" => tet.shift(false),
+                "s" => tet.soft_drop(),
+                "z" => tet.hard_drop(),
+                _ => {}
+            }
+            tet.frame_advance();
+            println!("{}", tet);
+        }
+    } else {
+        let mut game = Game::new();
+        block_on(game.run())?;
+    }
+    Ok(())
 }

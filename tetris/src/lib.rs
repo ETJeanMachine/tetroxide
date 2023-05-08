@@ -18,13 +18,13 @@ pub mod tetris {
     /// - `S`/`Z` Pieces, also called "skew".
     #[derive(Debug, Clone, Copy, EnumIter)]
     pub enum Tetromino {
-        I,
-        O,
-        T,
-        J,
-        L,
-        S,
-        Z,
+        I = 1,
+        O = 2,
+        T = 3,
+        J = 4,
+        L = 5,
+        S = 6,
+        Z = 7,
     }
     impl Tetromino {
         /// Gives the "shape" of a tetromino, given the default origin state is
@@ -81,19 +81,6 @@ pub mod tetris {
                 Tetromino::L => writeln!(f, "    []  \n[][][]  "),
                 Tetromino::S => writeln!(f, "  [][]  \n[][]    "),
                 Tetromino::Z => writeln!(f, "[][]    \n  [][]  "),
-            }
-        }
-    }
-    impl From<Tetromino> for u8 {
-        fn from(val: Tetromino) -> Self {
-            match val {
-                Tetromino::I => 1,
-                Tetromino::O => 2,
-                Tetromino::T => 3,
-                Tetromino::J => 4,
-                Tetromino::L => 5,
-                Tetromino::S => 6,
-                Tetromino::Z => 7,
             }
         }
     }
@@ -188,6 +175,7 @@ pub mod tetris {
         }
     }
 
+    #[derive(Debug, Clone, Copy)]
     struct ActivePiece {
         tetromino: Tetromino,
         origin: Pos,
@@ -242,7 +230,7 @@ pub mod tetris {
         /// This function takes in a bool as to if it is going
         /// clockwise/counter-clockwise, and performs the rotation on itself if it
         /// can be successfully done.
-        fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) {
+        fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
             // Getting our new rotational state.
             let new_rotation = self.rotation.rotate(clockwise);
             let (row, col) = (self.origin.0 as i32, self.origin.1 as i32);
@@ -268,7 +256,7 @@ pub mod tetris {
             // We extend our possible tests with the 4 additional tests:
             origins.extend(
                 match self.tetromino {
-                    Tetromino::O => return, /* O Tetromino's have no rotational logic. */
+                    Tetromino::O => return false, /* O Tetromino's have no rotational logic. */
                     Tetromino::I => match (self.rotation, new_rotation) {
                         // CW from Spawn State OR CCW to Inverted Spawn State
                         (State::Up, State::Right) | (State::Left, State::Down) => kick_data_i1,
@@ -324,9 +312,10 @@ pub mod tetris {
                     },
                     board,
                 ) {
-                    return;
+                    return true;
                 }
             }
+            false
         }
 
         /// Attempt to move a piece down by 1 pos
@@ -365,8 +354,14 @@ pub mod tetris {
         board: [[u8; MAX_COL]; MAX_ROW],
         active: ActivePiece,
         bag: Bag,
-        held: Option<Tetromino>,
+        held: (Option<Tetromino>, bool),
         queue: VecDeque<Tetromino>,
+        delay_count: u8,
+        gravity_count: f64,
+        last_move: bool,
+        pub score: u32,
+        pub level: u32,
+        pub lines: u32,
         pub is_game_over: bool,
     }
     impl Default for Tetris {
@@ -387,14 +382,22 @@ pub mod tetris {
             Tetris {
                 board,
                 active,
-                held: None,
-                queue,
                 bag,
+                held: (None, false),
+                queue,
+                delay_count: 0,
+                gravity_count: 0.0,
+                last_move: false,
+                score: 0,
+                level: 0,
+                lines: 0,
                 is_game_over: false,
             }
         }
     }
 
+    /// The number of frames we want to wait before trying to lock a piece.
+    const LOCK_DELAY: u8 = 30;
     impl Tetris {
         pub fn new(
             provided_board: Option<[[u8; MAX_COL]; MAX_ROW]>,
@@ -433,73 +436,163 @@ pub mod tetris {
             Tetris {
                 board,
                 active,
-                held: None,
+                held: (None, false),
                 queue,
                 bag,
+                delay_count: 0,
+                gravity_count: 0.0,
+                last_move: false,
+                score: 0,
+                level: 0,
+                lines: 0,
                 is_game_over: false,
             }
         }
 
-        /// Return the next piece in the queue and pull a new piece
-        /// from the bag to replace it
-        fn next_piece(&mut self) -> Option<Tetromino> {
-            if let Some(tet) = self.bag.next() {
-                self.queue.push_back(tet);
+        pub fn set_level(&mut self, level: u32) {
+            if level >= 15 {
+                self.level = 15;
+            } else {
+                self.level = level;
             }
+        }
 
-            self.queue.pop_front()
+        /// This advances forward the game by a singular frame.
+        /// The game assumes that 60 frames occur per second,
+        /// and additionally, internally calculates the speed at which
+        /// blocks will fall in this method.
+        ///
+        /// The standard for figuring out the speed of the blocks is based upon
+        /// the Tetris guidelines, which uses the rules from [Tetris Worlds]
+        /// (https://tetris.fandom.com/wiki/Tetris_Worlds). So, this formula:
+        ///
+        /// ```
+        /// let time = f64::powf(0.8 - ((level - 1.0) * 0.007), level - 1.0);
+        /// ```
+        ///
+        /// Where `time` refers to the amount of time spent in a single cell.
+        pub fn frame_advance(&mut self) {
+            // Computes the "gravity" of the current level.
+            let l = self.level as f64 - 1.0;
+            let time = f64::powf(0.8 - (l * 0.007), l);
+            self.gravity_count += 1.0 / (time * 60.0);
+            self.delay_count += 1;
+            // Getting the total number of cells we need to advance...
+            for _ in 0..self.gravity_count as u8 {
+                self.gravity_count -= 1.0;
+                // Trying to drop the piece - if not, we try to lock it.
+                if !self.active.soft_drop(&self.board) {
+                    self.try_lock();
+                } else {
+                    self.delay_count = 0;
+                }
+            }
         }
 
         /// Call the active piece's soft_drop() to update its position if possible.
         /// If not, write piece to game board and draw new piece.
         pub fn soft_drop(&mut self) {
+            self.score += 1;
             if !self.active.soft_drop(&self.board) {
-                for (row, col) in self.active.get_squares() {
-                    if row < 20 {
-                        self.is_game_over = true;
-                    }
-                    self.board[row as usize][col as usize] = u8::from(self.active.tetromino);
-                }
-                if let Some(next_tet) = self.next_piece() {
-                    self.active = ActivePiece::new(next_tet);
-                }
+                self.lock();
             }
         }
 
         /// Immediately drop piece as far as it will go, and solidify at final
         /// position.
         pub fn hard_drop(&mut self) {
-            while self.active.soft_drop(&self.board) {}
-
-            for (row, col) in self.active.get_squares() {
-                if row < 20 {
-                    self.is_game_over = true;
-                }
-                self.board[row as usize][col as usize] = u8::from(self.active.tetromino);
+            while self.active.soft_drop(&self.board) {
+                self.score += 2;
             }
-            if let Some(next_tet) = self.next_piece() {
-                self.active = ActivePiece::new(next_tet);
-            }
+            self.lock();
         }
 
         /// Call the active piece's rotate()
         pub fn rotate(&mut self, clockwise: bool) {
             self.active.rotate(clockwise, &self.board);
+            // TODO: Logic for auto-locking once in an immobile state.
+            self.try_lock();
         }
 
+        /// Shifts a piece to the left/right.
         pub fn shift(&mut self, left: bool) {
             self.active.shift(left, &self.board);
+            self.try_lock();
         }
 
-        /// Erase filled rows and move rows above down
-        pub fn clear_lines(&mut self) {
+        /// Hold functionality
+        /// If no piece is held, place active piece in hold and draw new piece
+        /// If something is held, swap held & active piece.
+        ///
+        /// A piece can only be removed from held once a lock has occurred.
+        pub fn hold(&mut self) {
+            if let (Some(tetromino), true) = self.held {
+                self.held = (Some(self.active.tetromino), false);
+                self.active = ActivePiece::new(tetromino);
+            } else if self.held.0.is_none() {
+                self.held = (Some(self.active.tetromino), false);
+                self.active = ActivePiece::new(self.next_piece());
+            }
+        }
+
+        /// Return the next piece in the queue and pull a new piece
+        /// from the bag to replace it
+        fn next_piece(&mut self) -> Tetromino {
+            let popped = self.queue.pop_front();
+            if let Some(tet) = self.bag.next() {
+                self.queue.push_back(tet);
+            }
+            popped.unwrap()
+        }
+
+        /// `try_lock` attempts to lock the piece onto the board. It takes in a bool
+        /// specifying whether or not we want to force the locking of the piece - as
+        /// for certain moves (such as T-spins and hard drops) we want this to occur.
+        fn try_lock(&mut self) {
+            if self.delay_count < LOCK_DELAY {
+                // Piece's won't lock if they're not being forced to and they're under
+                // the required frame count.
+                self.delay_count += 1;
+            } else {
+                // Here we check to see if the piece is immobile. If it is, we lock it.
+                let mut cloned = self.active;
+                if !(cloned.shift(true, &self.board)
+                    && cloned.shift(false, &self.board)
+                    && cloned.rotate(true, &self.board)
+                    && cloned.rotate(false, &self.board))
+                {
+                    self.lock();
+                }
+            }
+        }
+
+        /// Locks the active piece immediately in place.
+        fn lock(&mut self) {
+            // Locking the piece onto the board.
+            for (row, col) in self.active.get_squares() {
+                // Updating the game over state if we're locking above 20.
+                if !self.is_game_over {
+                    self.is_game_over = row <= 20
+                };
+                self.board[row as usize][col as usize] = self.active.tetromino as u8;
+            }
+            // Updating the active piece.
+            self.active = ActivePiece::new(self.next_piece());
+            // Allowing the held piece to be usable (if not already).
+            self.held = (self.held.0, true);
+            // Attempts to clear the board.
+            self.try_clear();
+        }
+
+        /// Erase filled rows and move rows above down; as well as update the score to match.
+        fn try_clear(&mut self) {
+            let mut l_count = 0;
             for row in (0..MAX_ROW).rev() {
                 loop {
                     let is_solid = self.board[row].iter().all(|&itm| itm != 0);
-
                     if is_solid {
+                        l_count += 1;
                         self.board[row].iter_mut().for_each(|x| *x = 0);
-
                         for sub_row in (0..row).rev() {
                             for col in 0..MAX_COL {
                                 self.board[sub_row + 1][col] = self.board[sub_row][col];
@@ -510,28 +603,22 @@ pub mod tetris {
                     }
                 }
             }
-        }
-
-        /// Hold functionality
-        /// If no piece is held, place active piece in hold and draw new piece
-        /// If something is held, swap held & active piece
-        pub fn hold(&mut self) {
-            if self.held.is_none() {
-                self.held = Some(self.active.tetromino);
-
-                if let Some(next) = self.next_piece() {
-                    self.active = ActivePiece::new(next);
-                }
-            } else if let Some(temp_tet) = self.held {
-                self.held = Some(self.active.tetromino);
-                self.active = ActivePiece::new(temp_tet);
-            }
+            // Adding up our score.
+            self.lines += l_count;
+            self.score += self.level
+                * match l_count {
+                    1 => 100,
+                    2 => 300,
+                    3 => 500,
+                    4 => 800,
+                    _ => 0,
+                };
         }
     }
     impl Display for Tetris {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             // Render the "Held" Area.
-            let held_str = self.held.map_or(String::new(), |h| h.to_string());
+            let held_str = self.held.0.map_or(String::new(), |h| h.to_string());
             let mut held_lines = held_str.lines();
             // Rendering the gameboard area.
             let mut board_render = Vec::with_capacity(20);
@@ -542,14 +629,20 @@ pub mod tetris {
                     .collect();
                 board_render.push(row_str);
             }
-            // Rendering the active piece.
-            let (mut min_col, mut max_col) = (11, 0);
-            for (row, col) in self.active.get_squares() {
-                let (row, col) = (row as usize, col as usize);
-                // Min/max is for "ghosting".
-                (min_col, max_col) = (min_col.min(col), max_col.max(col));
-                if row >= 20 {
-                    board_render[row - 20].replace_range(2 * col..2 * (col + 1), "[]");
+            // Rendering the piece.
+            let mut ghost = self.active;
+            while ghost.soft_drop(&self.board) {}
+            let (g_squares, a_squares) = (ghost.get_squares(), self.active.get_squares());
+            for i in 0..4 {
+                let ((g_r, g_c), (a_r, a_c)) = (g_squares[i], a_squares[i]);
+                let (g_r, g_c, a_r, a_c) = (g_r as usize, g_c as usize, a_r as usize, a_c as usize);
+                // The ghost piece first.
+                if g_r >= 20 {
+                    board_render[g_r - 20].replace_range(2 * g_c..2 * (g_c + 1), " X");
+                }
+                // Then the active piece.
+                if a_r >= 20 {
+                    board_render[a_r - 20].replace_range(2 * a_c..2 * (a_c + 1), "[]");
                 }
             }
             // Rendering the "Queue" Area.
@@ -557,34 +650,35 @@ pub mod tetris {
                 self.queue.iter().rev().map(|t| t.to_string()).collect();
             // Top of the Tetris Game.
             writeln!(f, "{:>7}{:>34}", "HELD", "NEXT")?;
-            let mut queue_string = queue.pop_back().unwrap_or(String::new());
+            let score_info = format!(
+                "{:10}\n{:->9}\n{:<10}\n\n{:10}\n{:->9}\n{:<10}\n\n{:10}\n{:->9}\n{:<10}",
+                "SCORE", "", self.score, "LEVEL", "", self.level, "LINES", "", self.lines
+            );
+            let mut score_lines = score_info.lines();
+            let mut queue_string = queue.pop_back().unwrap_or_default();
             let mut queue_lines = queue_string.lines();
-            for row in 0..20 {
-                let (held_render, queue_render) = if row > 0 {
-                    (
-                        held_lines.next().unwrap_or(""),
-                        queue_lines.next().unwrap_or(""),
-                    )
-                } else {
-                    ("", "")
-                };
+            for (row, centre_render) in board_render.iter().enumerate() {
+                let (mut left_render, mut right_render) = ("", "");
+                if row > 0 {
+                    left_render = if row >= 4 {
+                        score_lines.next().unwrap_or_default()
+                    } else {
+                        held_lines.next().unwrap_or_default()
+                    };
+                    right_render = queue_lines.next().unwrap_or_default();
+                }
                 writeln!(
                     f,
                     "{:^10}<!{}!>{:^10}",
-                    held_render, board_render[row], queue_render,
+                    left_render, centre_render, right_render,
                 )?;
-                if queue_render.is_empty() && !queue_string.is_empty() && row != 0 {
-                    queue_string = queue.pop_back().unwrap_or(String::new());
+                if right_render.is_empty() && !queue_string.is_empty() && row != 0 {
+                    queue_string = queue.pop_back().unwrap_or_default();
                     queue_lines = queue_string.lines();
                 }
             }
-            // Rendering the "ghost" of the piece.
-            writeln!(
-                f,
-                "{:>12}{:=<20}!>",
-                "<!",
-                format!("{:#<1$}", "=".repeat((min_col) * 2), (max_col + 1) * 2)
-            )?;
+            // Bottom of the board.
+            writeln!(f, "{:>12}{:=>20}!>", "<!", "")?;
             writeln!(f, "{:>32}", "\\/".repeat(10))?;
             Ok(())
         }
