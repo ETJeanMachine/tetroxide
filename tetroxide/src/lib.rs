@@ -1,13 +1,19 @@
 pub mod tetroxide {
     use crossterm::{
         cursor::{Hide, Show},
-        event::{read, EnableMouseCapture, Event, KeyCode, KeyEvent},
+        event::{
+            read, poll, EnableMouseCapture, 
+            Event, KeyCode, KeyEventKind, KeyEvent
+        },
         execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        terminal::{
+            disable_raw_mode, enable_raw_mode, 
+            EnterAlternateScreen, LeaveAlternateScreen, Clear
+        },
         Result,
     };
     use spin_sleep::LoopHelper;
-    use std::io::{stdout, Write};
+    use std::{io::{stdout, Write}, time::Duration};
     use tetris::tetris::Tetris;
     use tui_input::backend::crossterm as backend;
     use tui_input::backend::crossterm::EventHandler;
@@ -26,11 +32,13 @@ pub mod tetroxide {
         tetris: Tetris,
         looper: LoopHelper,
     }
+
     impl Default for Game {
         fn default() -> Self {
             Self::new()
         }
     }
+    
     impl Game {
         pub fn new() -> Self {
             Game {
@@ -48,11 +56,11 @@ pub mod tetroxide {
 
             execute!(stdout, Hide, EnterAlternateScreen, EnableMouseCapture)?;
 
-            self.tetris.soft_drop();
-            self.tetris.soft_drop();
-            println!("{}", self.tetris);
-            let input = format!("{}", self.tetris);
-            backend::write(&mut stdout, input.as_str(), 90, (0, 0), 15)?;
+            // self.tetris.soft_drop();
+            // self.tetris.soft_drop();
+            // println!("{}", self.tetris);
+            // let input = format!("{}", self.tetris);
+            // backend::write(&mut stdout, input.as_str(), 90, (0, 0), 15)?;
             stdout.flush()?;
 
             let mut frame_count: i64 = 1;
@@ -60,18 +68,22 @@ pub mod tetroxide {
             while !self.tetris.is_game_over {
                 self.looper.loop_start();
 
-                let event = read()?;
+                execute!(stdout, Clear(crossterm::terminal::ClearType::All))?;
+                println!("{}", self.tetris);
 
-                if let Event::Key(KeyEvent { code, .. }) = event {
-                    match code {
-                        KeyCode::Esc => break,
-                        KeyCode::Left => todo!(),
-                        KeyCode::Right => todo!(),
-                        KeyCode::Up => todo!(),
-                        KeyCode::Down => todo!(),
-                        KeyCode::Char(_) => todo!(),
-                        KeyCode::F(1) => todo!(),
-                        KeyCode::Modifier(_) => todo!(),
+                let event_waiting = poll(Duration::from_secs(0))?;
+                let event = if event_waiting {read()?} else {Event::FocusLost};
+
+                if let Event::Key(KeyEvent { code, kind, .. }) = event {
+                    match kind {
+                        KeyEventKind::Press => {
+                            match code {
+                                KeyCode::Esc => break,
+                                KeyCode::Char('a') => self.tetris.shift(true),
+                                KeyCode::Char('d') => self.tetris.shift(false),
+                                _ => {}
+                            }
+                        },
                         _ => {}
                     }
                 }
@@ -84,7 +96,6 @@ pub mod tetroxide {
                 self.looper.loop_sleep();
                 frame_count += 1;
             }
-            stdout.flush()?;
 
             disable_raw_mode()?;
 
