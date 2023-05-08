@@ -18,13 +18,13 @@ pub mod tetris {
     /// - `S`/`Z` Pieces, also called "skew".
     #[derive(Debug, Clone, Copy, EnumIter)]
     pub enum Tetromino {
-        I,
-        O,
-        T,
-        J,
-        L,
-        S,
-        Z,
+        I = 1,
+        O = 2,
+        T = 3,
+        J = 4,
+        L = 5,
+        S = 6,
+        Z = 7,
     }
     impl Tetromino {
         /// Gives the "shape" of a tetromino, given the default origin state is
@@ -81,19 +81,6 @@ pub mod tetris {
                 Tetromino::L => writeln!(f, "    []  \n[][][]  "),
                 Tetromino::S => writeln!(f, "  [][]  \n[][]    "),
                 Tetromino::Z => writeln!(f, "[][]    \n  [][]  "),
-            }
-        }
-    }
-    impl From<Tetromino> for u8 {
-        fn from(val: Tetromino) -> Self {
-            match val {
-                Tetromino::I => 1,
-                Tetromino::O => 2,
-                Tetromino::T => 3,
-                Tetromino::J => 4,
-                Tetromino::L => 5,
-                Tetromino::S => 6,
-                Tetromino::Z => 7,
             }
         }
     }
@@ -371,6 +358,7 @@ pub mod tetris {
         queue: VecDeque<Tetromino>,
         delay_count: u8,
         gravity_count: f64,
+        last_move: bool,
         pub score: u32,
         pub level: u32,
         pub lines: u32,
@@ -399,6 +387,7 @@ pub mod tetris {
                 queue,
                 delay_count: 0,
                 gravity_count: 0.0,
+                last_move: false,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -452,6 +441,7 @@ pub mod tetris {
                 bag,
                 delay_count: 0,
                 gravity_count: 0.0,
+                last_move: false,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -515,24 +505,19 @@ pub mod tetris {
                 self.score += 2;
             }
             self.lock();
-            self.try_clear();
         }
 
         /// Call the active piece's rotate()
         pub fn rotate(&mut self, clockwise: bool) {
             self.active.rotate(clockwise, &self.board);
             // TODO: Logic for auto-locking once in an immobile state.
-            if self.try_lock() {
-                self.try_clear();
-            }
+            self.try_lock();
         }
 
         /// Shifts a piece to the left/right.
         pub fn shift(&mut self, left: bool) {
             self.active.shift(left, &self.board);
-            if self.try_lock() {
-                self.try_clear();
-            }
+            self.try_lock();
         }
 
         /// Hold functionality
@@ -563,12 +548,11 @@ pub mod tetris {
         /// `try_lock` attempts to lock the piece onto the board. It takes in a bool
         /// specifying whether or not we want to force the locking of the piece - as
         /// for certain moves (such as T-spins and hard drops) we want this to occur.
-        fn try_lock(&mut self) -> bool {
+        fn try_lock(&mut self) {
             if self.delay_count < LOCK_DELAY {
                 // Piece's won't lock if they're not being forced to and they're under
                 // the required frame count.
                 self.delay_count += 1;
-                false
             } else {
                 // Here we check to see if the piece is immobile. If it is, we lock it.
                 let mut cloned = self.active;
@@ -578,9 +562,6 @@ pub mod tetris {
                     && cloned.rotate(false, &self.board))
                 {
                     self.lock();
-                    true
-                } else {
-                    false
                 }
             }
         }
@@ -593,12 +574,14 @@ pub mod tetris {
                 if !self.is_game_over {
                     self.is_game_over = row <= 20
                 };
-                self.board[row as usize][col as usize] = u8::from(self.active.tetromino);
+                self.board[row as usize][col as usize] = self.active.tetromino as u8;
             }
             // Updating the active piece.
             self.active = ActivePiece::new(self.next_piece());
             // Allowing the held piece to be usable (if not already).
-            self.held = (self.held.0, true)
+            self.held = (self.held.0, true);
+            // Attempts to clear the board.
+            self.try_clear();
         }
 
         /// Erase filled rows and move rows above down; as well as update the score to match.
