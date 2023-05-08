@@ -18,6 +18,15 @@ pub fn standard_strip(s: &mut String) -> String {
     stripped
 }
 
+pub fn convert_string_to_u8_array(s: &mut String) -> [[u8; MAX_COL]; MAX_ROW] {
+    // Convert an input board as a string into a grid of u8s that can be feed into
+    // Tetris::new() to instantiate a tetris game.
+
+    let mut result = [[u8; MAX_COL]; MAX_ROW];
+    result
+
+}
+
 mod test_new {
     use super::*;
     #[test]
@@ -35,3 +44,23 @@ mod test_new {
         assert_eq!(f, s);
     }
 }
+
+mod test_scoring{
+
+    use super::*;
+    #[test]
+    fn test_t_spin_score() -> (){
+
+        // load the game state, ignore any possibly generated score at this point
+        let mut board_as_string  = fs::read_to_string("tests\\assets\\testnew.txt").unwrap();
+        convert_string_to_u8_array(&mut board_as_string);
+       
+      
+        panic!();
+
+    }
+}
+
+// TODO: make unit tests for scoring
+// use frame advance
+
