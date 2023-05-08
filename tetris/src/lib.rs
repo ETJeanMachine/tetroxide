@@ -354,6 +354,12 @@ pub mod tetris {
         }
     }
 
+    enum SpinType {
+        Not,
+        Full,
+        Mini
+    }
+
     pub struct Tetris {
         board: [[u8; MAX_COL]; MAX_ROW],
         active: ActivePiece,
@@ -362,7 +368,7 @@ pub mod tetris {
         queue: VecDeque<Tetromino>,
         delay_count: u8,
         gravity_count: f64,
-        last_move: bool,
+        last_was_spin: SpinType,
         pub score: u32,
         pub level: u32,
         pub lines: u32,
@@ -391,7 +397,7 @@ pub mod tetris {
                 queue,
                 delay_count: 0,
                 gravity_count: 0.0,
-                last_move: false,
+                last_was_spin: SpinType::Not,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -445,7 +451,7 @@ pub mod tetris {
                 bag,
                 delay_count: 0,
                 gravity_count: 0.0,
-                last_move: false,
+                last_was_spin: SpinType::Not,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -599,9 +605,9 @@ pub mod tetris {
                     };
 
                 if front_count == 2 && back_count == 2 {
-                    self.score += 400 * self.level;
+                    self.last_was_spin = SpinType::Full;
                 } else if front_count == 1 && back_count == 2 {
-                    self.score += 100 * self.level;
+                    self.last_was_spin = SpinType::Mini;
                 }
             }
             self.try_lock(false);
@@ -706,12 +712,29 @@ pub mod tetris {
             self.lines += l_count;
             self.score += self.level
                 * match l_count {
-                    1 => 100,
-                    2 => 300,
-                    3 => 500,
+                    1 => match self.last_was_spin {
+                        SpinType::Mini => 200,
+                        SpinType::Full => 800,
+                        _ => 100
+                    },
+                    2 => match self.last_was_spin {
+                        SpinType::Mini => 400,
+                        SpinType::Full => 1200,
+                        _ => 300
+                    },
+                    3 => match self.last_was_spin {
+                        SpinType::Full => 1600,
+                        _ => 500
+                    },
                     4 => 800,
-                    _ => 0,
+                    _ => match self.last_was_spin {
+                        SpinType::Mini => 100,
+                        SpinType::Full => 400,
+                        _ => 0
+                    },
                 };
+
+            self.last_was_spin = SpinType::Not;
         }
     }
     impl Display for Tetris {
