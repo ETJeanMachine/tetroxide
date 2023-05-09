@@ -43,16 +43,8 @@ For the `tetroxide` crate (GUI and game handling):
   - OS independent terminal interfaces
 * futures = "0.3"
   - Asynchronous abstractions
-* serde = {version = "1.0", features = ["derive"] }
-  - JSON serialization/deserialization
-* serde_json = "1.0"
-  - Serde helper
-* chrono = { version = "0.4", features = ["serde"] }
-  - More complete superset of the `Time` library, for  TODO WHAT DOES IT DO
 * rand = { version = "0.7.3", default-features = false, features = ["std"] }
   - Randomness in piece order generation
-* thiserror = "1.0"
-  - Easy macro for `std::error::Error` 
 
 [dependencies.async-std]
 * version = "1.7.0"
