@@ -15,7 +15,7 @@ pub mod tetroxide {
         layout::{Alignment, Constraint, Direction, Layout},
         style::{Color, Style},
         text::{Span, Spans, Text},
-        widgets::{Block, Borders, Paragraph},
+        widgets::{Block, BorderType, Borders, Paragraph},
         Terminal,
     };
 
@@ -41,10 +41,10 @@ pub mod tetroxide {
             2 => Color::Yellow,
             3 => Color::Magenta,
             4 => Color::Blue,
-            5 => Color::White,
+            5 => Color::DarkGray,
             6 => Color::Green,
             7 => Color::Red,
-            8 => Color::Gray,
+            8 => Color::White,
             _ => Color::Reset,
         };
         Style::default().fg(color)
@@ -81,11 +81,13 @@ pub mod tetroxide {
             text
         }
 
-        async fn pause(terminal: Terminal<CrosstermBackend<Stdout>>) {}
+        async fn pause(terminal: &mut Terminal<CrosstermBackend<Stdout>>) {}
 
-        async fn game_loop(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-            let mut loop_helper = LoopHelper::builder()
-                .build_with_target_rate(60.0); // limit to 60 FPS if possible
+        async fn game_loop(
+            &mut self,
+            terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+        ) -> Result<()> {
+            let mut loop_helper = LoopHelper::builder().build_with_target_rate(60.0); // limit to 60 FPS if possible
             loop {
                 loop_helper.loop_start();
                 let game_par = Paragraph::new(self.draw_game()).alignment(Alignment::Center);
@@ -98,7 +100,12 @@ pub mod tetroxide {
                             .title("HELD")
                             .title_alignment(Alignment::Center),
                     );
-                let score_par = Paragraph::new(Text::from(format!("{}", self.tetris.score)))
+                let score_text = if self.tetris.combo_count > 0 {
+                    format!("{}\n{}x COMBO", self.tetris.score, self.tetris.combo_count)
+                } else {
+                    format!("{}", self.tetris.score)
+                };
+                let score_par = Paragraph::new(Text::from(score_text))
                     .alignment(Alignment::Center)
                     .block(
                         Block::default()
@@ -135,31 +142,53 @@ pub mod tetroxide {
                             .title("NEXT")
                             .title_alignment(Alignment::Center),
                     );
+                let game_block = Block::default()
+                    .border_type(BorderType::Double)
+                    .borders(Borders::ALL)
+                    .title("TETROXIDE")
+                    .title_alignment(Alignment::Center);
                 // DRAWING TO THE TERMINAL
                 terminal.draw(|f| {
+                    let size = f.size();
+                    let all = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints(
+                            [
+                                Constraint::Percentage(50),
+                                Constraint::Length(46),
+                                Constraint::Percentage(50),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(f.size());
                     let layout = Layout::default()
                         .direction(Direction::Horizontal)
-                        .constraints([
-                            Constraint::Max(10),
-                            Constraint::Max(24),
-                            Constraint::Max(10),
-                            Constraint::Max(0),
-                        ])
-                        .split(f.size());
+                        .constraints(
+                            [
+                                Constraint::Length(12),
+                                Constraint::Length(24),
+                                Constraint::Length(12),
+                                Constraint::Percentage(100),
+                            ]
+                            .as_ref(),
+                        ).margin(1)
+                        .split(all[1]);
                     let stats_layout = Layout::default()
                         .direction(Direction::Vertical)
                         .constraints([
-                            Constraint::Max(4),
-                            Constraint::Max(3),
-                            Constraint::Max(3),
-                            Constraint::Max(3),
-                            Constraint::Max(0),
+                            Constraint::Length(4),
+                            Constraint::Length(4),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Percentage(100),
                         ])
                         .split(layout[0]);
                     let next_layout = Layout::default()
                         .direction(Direction::Vertical)
-                        .constraints([Constraint::Max(13), Constraint::Max(0)])
+                        .constraints([Constraint::Length(13), Constraint::Percentage(100)])
                         .split(layout[2]);
+                    // Rendering all of our widgets.
+                    f.render_widget(game_block, all[1]);
                     f.render_widget(held_par, stats_layout[0]);
                     f.render_widget(score_par, stats_layout[1]);
                     f.render_widget(level_par, stats_layout[2]);

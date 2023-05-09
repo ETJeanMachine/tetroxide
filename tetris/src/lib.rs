@@ -369,7 +369,7 @@ pub mod tetris {
         delay_count: u8,
         gravity_count: f64,
         last_was_spin: SpinType,
-        combo_count: i32,
+        pub combo_count: i32,
         pub score: u32,
         pub level: u32,
         pub lines: u32,
