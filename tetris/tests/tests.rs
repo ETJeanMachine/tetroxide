@@ -79,7 +79,7 @@ mod test_t_spin_score {
 
         let game = Tetris::new(Some(board), None);
 
-        assert!(True); // need to calc control score, move piece into t-spin, check test score
+        assert!(true); // need to calc control score, move piece into t-spin, check test score
     }
 }
 
