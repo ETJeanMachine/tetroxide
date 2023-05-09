@@ -8,7 +8,7 @@ pub mod tetroxide {
     use spin_sleep::LoopHelper;
     use std::io::{self, Stdout};
     use std::time::Duration;
-    use tetris::tetris::Tetris;
+    use tetris::tetris::{SpinType, Tetris};
     use tui::{
         backend::CrosstermBackend,
         layout::{Alignment, Constraint, Direction, Layout},
@@ -207,8 +207,13 @@ pub mod tetroxide {
                         .title("HELD")
                         .title_alignment(Alignment::Center),
                 );
+            // displaying score/combo/tetris/spin
             let score_text = if self.tetris.did_tetris {
                 format!("{}\nTETRIS!", self.tetris.score)
+            } else if let SpinType::Full = self.tetris.last_was_spin {
+                format!("{}\nT-SPIN!", self.tetris.score)
+            } else if let SpinType::Mini = self.tetris.last_was_spin {
+                format!("{}\nM. T-SPIN!", self.tetris.score)
             } else if self.tetris.combo_count > 0 {
                 format!("{}\n{}x COMBO", self.tetris.score, self.tetris.combo_count)
             } else {

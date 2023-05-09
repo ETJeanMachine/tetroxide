@@ -359,7 +359,7 @@ pub mod tetris {
         }
     }
 
-    enum SpinType {
+    pub enum SpinType {
         Not,
         Full,
         Mini,
@@ -373,8 +373,8 @@ pub mod tetris {
         queue: VecDeque<Tetromino>,
         delay_count: u8,
         gravity_count: f64,
-        last_was_spin: SpinType,
         manually_set_level: bool,
+        pub last_was_spin: SpinType,
         pub did_tetris: bool,
         pub combo_count: i32,
         pub score: u32,
