@@ -1,4 +1,4 @@
-# Project Title
+# TETROXIDE
 
 Team members:
 
@@ -13,55 +13,100 @@ of the app was implemented using [crossterm](https://github.com/crossterm-rs/cro
 
 ## Project Execution Summary
 
-- Phase I:
-  - Implementing basic functional components:
-    - `Tetromino` - enum differentiating basic piece shapes and values for the game board.
-    - `State` - enum representing rotation states of an abstract piece.
-    - `Pos` - struct representing a position on the game board.
-    - `ActivePiece` - struct representing some currently active piece, irrespective of the game board.
-    - `Bag` - struct abstracting the random selection of next pieces for play.
-    - `Tetris` - struct managing the other components during play, as well as representing the game board and all other variables we want to track.
-  - Notably, all of these components were designed with some abstraction in mind, to avoid relying entirely on direct calculations on the game board as our entire source of truth or worrying about the exact piece in play.
-  - Implementing basic gameplay logic for the components:
-    - Displaying tetrominos
-    - Rotating a piece state in isolation
-    - Moving a position and bounds-checking it.
-    - Shifting, rotating (checking collisions after abstract rotation), and dropping some actual active piece.
-    - Solidifying a dropped piece and clearing filled lines.
-    - Drawing random pieces from the bag, tracking them in a queue, and spawning them at the top of the board.
-  - Implementing a non-realtime gameplay loop based on basic printing and text input.
-- Phase II:
-  - Basic real-time game loop (via un-optimal terminal printing)
-  - "Gravity"-based drop calculations
-  - Level increases, with an effect on gravity
-  - Basic line clear & manual drop scoring (with level multiplier)
-  - Basic upcoming piece & score displays
+### Phase I
 
-- Phase III:
-  - Full & appropriately timed real-time game loop
-  - Piece solidification delay
-  - Full text UI, with colored pieces and optimal terminal operation
-  - Pause & restart functionality
-  - Leveling system
-  - T-spin bonuses
-  - Combo system
+- Implementing basic functional components:
+  - `Tetromino` - enum differentiating basic piece shapes and values for the game board.
+  - `State` - enum representing rotation states of an abstract piece.
+  - `Pos` - struct representing a position on the game board.
+  - `ActivePiece` - struct representing some currently active piece, irrespective of the game board.
+  - `Bag` - struct abstracting the random selection of next pieces for play.
+  - `Tetris` - struct managing the other components during play, as well as representing the game board and all other variables we want to track.
+- Notably, all of these components were designed with some abstraction in mind, to avoid relying entirely on direct calculations on the game board as ourentire source of truth or worrying about the exact piece in play.
+- Implementing basic gameplay logic for the components:
+  - Displaying tetrominos
+  - Rotating a piece state in isolation
+  - Moving a position and bounds-checking it.
+  - Shifting, rotating (checking collisions after abstract rotation), and dropping some actual active piece.
+  - Solidifying a dropped piece and clearing filled lines.
+  - Drawing random pieces from the bag, tracking them in a queue, and spawning them at the top of the board.
+- Implementing a non-realtime gameplay loop based on basic printing and text input.
+
+### Phase II
+
+- Basic real-time game loop (via un-optimal terminal printing)
+- "Gravity"-based drop calculations
+- Level increases, with an effect on gravity
+- Basic line clear & manual drop scoring (with level multiplier)
+- Basic upcoming piece & score displays
+
+### Phase III
+
+- Full & appropriately timed real-time game loop
+- Piece solidification delay
+- Full text UI, with colored pieces and optimal terminal operation
+- Pause & restart functionality
+- Leveling system
+- T-spin bonuses
+- Combo system
 
 ## Structure Summery
+<!-- TODO -->
+<!-- - Briefly describe the structure of the code (what are the main components, the
+  module dependency structure). Why was the project modularized in this way? -->
+We modularized into two seperate crates - `Tetroxide` and `Tetris`. The former holds the primary game logic, whilst the latter control the GUI and user input. Modularizing in this fashion allows us to more efficiently and cohesively execute our code. Additionally, keeping much, if not the majority, of the game logic private is simply just good coding practice.
+
+### Abandoned & Difficult Approaches
 
 <!-- TODO -->
 
-- Briefly describe the structure of the code (what are the main components, the
-  module dependency structure). Why was the project modularized in this way?
-
-### Abandonded & Difficult Approaches
-
-<!-- TODO -->
-
-- Were any parts of the code particularly difficult to express using Rust? What
+<!-- - Were any parts of the code particularly difficult to express using Rust? What
   are the challenges in refining and/or refactoring this code to be a better
   example of idiomatic Rust?
 - Describe any approaches attempted and then abandoned and the reasons why. What
-  did you learn by undertaking this project?
+  did you learn by undertaking this project? -->
+Working with TUI-RS can be best described as disgusting. Not only was documentation so poor for it that we found us going to Chat-GPT for simple documentation help; the way in which it's structured leaves... much to be desired. Our level menu, for instance, feels quite hacky as simply formatted text, instead of an actual button interface. It works, just not well. However, it still is a significant step up from what we had with our debug mode in the previous phase; so it's by no means unsatisfactory. But this:
+
+```rust
+let all = Layout::default()
+    .direction(Direction::Horizontal)
+    .constraints(
+        [
+            Constraint::Length((size.width - 48) / 2),
+            Constraint::Length(48),
+            Constraint::Length((size.width - 48) / 2),
+        ]
+        .as_ref(),
+    )
+    .split(size);
+let layout = Layout::default()
+    .direction(Direction::Horizontal)
+    .constraints(
+        [
+            Constraint::Length(12),
+            Constraint::Length(24),
+            Constraint::Length(12),
+            Constraint::Percentage(100),
+        ]
+        .as_ref(),
+    )
+    .margin(1)
+    .split(all[1]);
+let stats_layout = Layout::default()
+    .direction(Direction::Vertical)
+    .constraints([
+        Constraint::Length(4),
+        Constraint::Length(4),
+        Constraint::Length(3),
+        Constraint::Length(3),
+        Constraint::Percentage(100),
+    ])
+    .split(layout[0]);
+```
+
+Does leave a lot to be desired in terms of... sheer readability and understanding.
+
+In our abandoned department, we would've liked to have made this a multiplayer game. However, we soon realized that we were undertaking a lot more than we expected when it came to actually working in purely single-player. This is something we may have been able to accomplish given we had one or so more group members, as ultimately, it came down to a time constraint, and fulfilling the fullest scope of the project as we could.
 
 <!-- Jesse - tbh i should put down all of unit testing, I had trouble getting Rust to play nice while also trying to infer what the other crates were doing. Rust isn't a good language for prototyping and often writing Unit Tests were lengthier processes than hand-testing with print statements. -->
 
@@ -151,16 +196,24 @@ For the `tetroxide` crate (GUI and game handling):
   - Additional TUI dependencies, such as the crossterm backend.
 - `[dependencies.tui-input]`
 
-
 ### Rubric Discussion
 
-- Completeness: 
-
-While our project accomplished our TODO
+- Completeness:
+While our project accomplished our MVP; there was quite a bit more we would have liked to get done, such as multiplayer. This mostly did not take place due to our underestimation of how complex Tetris's rotational and scoring systems are. As it stands now, our current implementation is our MVP, and we completed that successfully.
 
 - Style/Design:
+  - Our overall design is solid. Modularizing into separate GUI/logical crates worked well, and our style, while messy with regards to how TUI-RS works; is consistent and works well.
+  - We also consistently use various rust traits and elements throughout our project.
+    - Our bag for our tetris module is an iterator
+    - Our main tetris function has an extensive display function for that trait
+    - We use many enums; with implemented traits; not limited to:
+      - `Tetromino`
+      - `SpinType`
+      - `MenuState`
+    - We also use typing very well; including limiting our board to be `u8` as we acknowledge that any more data would be wasteful.
 
 - Effort/Accomplishment:
-
-- Review the final project grading rubric and discuss any relevant aspects of
-  the project.
+  - This was not a low-effort undertaking of a project. Tetris; while on the onset may seem simple, it is considerably more complex than that. As such, we believe that our end result was high-effort. Our graphical display we also believe to be of very good quality.
+  - Our understanding of rust was enhanced through this project; and ways in which to use rust tools, like iterators, was very much so enhanced.
+  - We had to do a lot of research and understanding into Tetris to fully understand a lot of the intricate rules and scoring systems in the game. This was an undertaking in and of itself; outside of the coding portion of the project.
+  - We also had to undertake quite a deal of research in TUI-RS and how to effectively use it to display graphical output to the user.
