@@ -8,11 +8,8 @@ Team members:
 
 ## Summary Description
 
-Reiterate the summary description of the overall goal of the project (updated as
-necessary from the Proposal and/or Checkpoint documents).
-
-A command line based version of [Tetris](https://en.wikipedia.org/wiki/Tetris?oldformat=true), written in Rust. We will be implementing with [TUI](https://github.com/fdehau/tui-rs) to handle the GUI component and real-time gameplay of the final app. 
-TODO UPDATE THIS!!!!!!!!!!!!!!!!
+A command line based version of [Tetris](https://en.wikipedia.org/wiki/Tetris?oldformat=true), written in Rust. The GUI and real-time input / gameplay component
+of the app was implemented using [crossterm](https://github.com/crossterm-rs/crossterm), a text-based interface library. The GUI & appearance of our implementation is based off of the very original version of terminal Tetris, while the gameplay implements modern standards, namely the Super Rotation System and the Guideline scoring system.
 
 ## Project Execution Summary
 
