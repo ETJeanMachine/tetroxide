@@ -127,13 +127,9 @@ In our abandoned department, we would've liked to have made this a multiplayer g
         (row, col)
     };
     let mut origins = vec![origin];
-    // "Kick data" refers to the possible offset values that can be used for the 4 kick states.
-    // There are 8 total different offset value sets; 4 of which are inverted from the other 4.
-    // Refers to the I Tetromino.
+    ...
     let kick_data_i1 = vec![(-2, 0), (1, 0), (-2, -1), (1, -2)];
-    let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)];
-    // Refers to the other 5 (non-O) Tetrominos.
-    let kick_data = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
+    ...
     // We extend our possible tests with the 4 additional tests:
     origins.extend(
         match self.tetromino {
@@ -148,16 +144,7 @@ In our abandoned department, we would've liked to have made this a multiplayer g
                 ...
                 _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
             },
-            _ => match (self.rotation, new_rotation) {
-                // CW from Spawn State OR CCW to Inverted Spawn State
-                (State::Up, State::Right) | (State::Down, State::Right) => kick_data,
-                // CCW to Spawn State OR CW from Inverted Spawn State
-                (State::Right, State::Up) | (State::Right, State::Down) => {
-                    kick_data.into_iter().map(|(x, y)| (-x, -y)).collect()
-                }
-                ...
-                _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
-            },
+            ...
         }
         .into_iter()
         .map(|(x, y)| (row + y, col + x)),
