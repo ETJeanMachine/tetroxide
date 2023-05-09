@@ -6,7 +6,4 @@ Team members:
 - Jesse Pingitore
 - Andrew Idak
 
-
-Crate Tetroxide: 
-
-Crate Tetris: Game logic controller
+PLEASE IGNORE COMMITS PRIOR TO a2fd407007abe8d77447bbd2b6aaac0344a7ef29 FOR GRADING PURPOSES. ALL SUBSEQUENT COMMITS ARE FOR PERSONAL PURPOSES.
