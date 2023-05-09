@@ -8,8 +8,8 @@ pub mod tetroxide {
         execute,
         style::Print,
         terminal::{
-            self, disable_raw_mode, enable_raw_mode, Clear, EnterAlternateScreen,
-            LeaveAlternateScreen, ClearType,
+            self, disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
+            LeaveAlternateScreen,
         },
         Result,
     };
@@ -168,7 +168,7 @@ pub mod tetroxide {
                             Constraint::Max(10),
                             Constraint::Max(24),
                             Constraint::Max(10),
-                            Constraint::Max(0)
+                            Constraint::Max(0),
                         ])
                         .split(f.size());
                     let stats_layout = Layout::default()

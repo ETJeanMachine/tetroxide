@@ -6,8 +6,8 @@ pub mod tetris {
     use strum::IntoEnumIterator;
     use strum_macros::EnumIter;
 
-    const MAX_ROW: usize = 40;
-    const MAX_COL: usize = 10;
+    pub const MAX_ROW: usize = 40;
+    pub const MAX_COL: usize = 10;
 
     /// A Tetromino is a tetromino in tetris. They are all made up of exactly 4 blocks.
     /// It can be one of 7 different variants:
@@ -357,7 +357,7 @@ pub mod tetris {
     enum SpinType {
         Not,
         Full,
-        Mini
+        Mini,
     }
 
     pub struct Tetris {
@@ -566,46 +566,45 @@ pub mod tetris {
                 let new_pos = self.active.origin;
                 let front_count = match self.active.rotation {
                     State::Up => {
-                        (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32 +
-                        (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32
-                    },
+                        (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32
+                            + (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32
+                    }
                     State::Right => {
-                        (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32 +
-                        (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
-                    },
+                        (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32
+                            + (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
+                    }
                     State::Down => {
-                        (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32 +
-                        (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
-                    },
-                    State::Left => {
-                        (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32 +
                         (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32
+                            + (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
+                    }
+                    State::Left => {
+                        (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32
+                            + (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32
                     }
                 };
 
-                let back_count = 
-                    if !Pos::in_safe_range(new_pos.0, new_pos.1) {
-                        2
-                    } else {
-                        match self.active.rotation {
-                            State::Up => {
-                                (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32 +
-                                (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
-                            },
-                            State::Right => {
-                                (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32 +
-                                (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32
-                            },
-                            State::Down => {
-                                (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32 +
-                                (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32
-                            },
-                            State::Left => {
-                                (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32 +
-                                (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
-                            }
+                let back_count = if !Pos::in_safe_range(new_pos.0, new_pos.1) {
+                    2
+                } else {
+                    match self.active.rotation {
+                        State::Up => {
+                            (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32
+                                + (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
                         }
-                    };
+                        State::Right => {
+                            (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32
+                                + (self.board[new_pos.0 - 1][new_pos.1 + 1] != 0) as i32
+                        }
+                        State::Down => {
+                            (self.board[new_pos.0 - 1][new_pos.1 - 1] != 0) as i32
+                                + (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32
+                        }
+                        State::Left => {
+                            (self.board[new_pos.0 + 1][new_pos.1 - 1] != 0) as i32
+                                + (self.board[new_pos.0 + 1][new_pos.1 + 1] != 0) as i32
+                        }
+                    }
+                };
 
                 if front_count == 2 && back_count == 2 {
                     self.last_was_spin = SpinType::Full;
@@ -718,25 +717,25 @@ pub mod tetris {
                     1 => match self.last_was_spin {
                         SpinType::Mini => 200,
                         SpinType::Full => 800,
-                        _ => 100
+                        _ => 100,
                     },
                     2 => match self.last_was_spin {
                         SpinType::Mini => 400,
                         SpinType::Full => 1200,
-                        _ => 300
+                        _ => 300,
                     },
                     3 => match self.last_was_spin {
                         SpinType::Full => 1600,
-                        _ => 500
+                        _ => 500,
                     },
                     4 => 800,
                     _ => match self.last_was_spin {
                         SpinType::Mini => 100,
                         SpinType::Full => 400,
-                        _ => 0
+                        _ => 0,
                     },
                 };
-            
+
             if l_count > 0 {
                 self.combo_count += l_count as i32;
                 if self.combo_count > 0 {
