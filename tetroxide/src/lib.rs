@@ -1,44 +1,28 @@
 pub mod tetroxide {
     use async_std::task;
     use crossterm::{
-        cursor::{self, Hide, Show},
-        event::{
-            poll, read, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind, ModifierKeyCode,
-        },
+        event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, ModifierKeyCode},
         execute,
-        style::Print,
-        terminal::{
-            self, disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
-            LeaveAlternateScreen,
-        },
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen},
         Result,
     };
-    use std::{
-        fmt::format,
-        io::{self, stdout, Write},
-        time::{Duration, Instant},
-        vec,
-    };
+    use spin_sleep::LoopHelper;
+    use std::io::{self, Stdout};
+    use std::time::{Duration, Instant};
     use tetris::tetris::Tetris;
     use tui::{
         backend::{Backend, CrosstermBackend},
-        layout::{Alignment, Constraint, Direction, Layout, Rect},
+        layout::{Alignment, Constraint, Direction, Layout},
         style::{Color, Style},
         text::{Span, Spans, Text},
         widgets::{Block, BorderType, Borders, Paragraph},
-        Frame, Terminal,
+        Terminal,
     };
-    use tui_input::backend::crossterm as backend;
-    use tui_input::backend::crossterm::EventHandler;
-    use tui_input::Input;
 
-    enum Inputs {
-        RotateCcw,
-        RotateCw,
-        HardDrop,
-        Drop,
-        Left,
-        Right,
+    enum MenuOpts {
+        Quit,
+        Restart,
+        SetLevel,
     }
 
     pub struct Game {
@@ -57,10 +41,10 @@ pub mod tetroxide {
             2 => Color::Yellow,
             3 => Color::Magenta,
             4 => Color::Blue,
-            5 => Color::White,
+            5 => Color::DarkGray,
             6 => Color::Green,
             7 => Color::Red,
-            8 => Color::Gray,
+            8 => Color::White,
             _ => Color::Reset,
         };
         Style::default().fg(color)
@@ -97,22 +81,15 @@ pub mod tetroxide {
             text
         }
 
-        pub async fn run(&mut self) -> Result<()> {
-            // let mut stdout = stdout();
-            // execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
+        async fn pause(terminal: &mut Terminal<CrosstermBackend<Stdout>>) {}
 
-            // let stdout = io::stdout();
-            // let backend = CrosstermBackend::new(stdout);
-            // let mut terminal = Terminal::new(backend)?;
-            // terminal.clear()?;
-            enable_raw_mode()?;
-            let mut stdout = io::stdout();
-            execute!(stdout, EnterAlternateScreen)?;
-            let backend = CrosstermBackend::new(stdout);
-            let mut terminal = Terminal::new(backend)?;
-            // Render the widget
+        async fn game_loop(
+            &mut self,
+            terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+        ) -> Result<()> {
+            let mut loop_helper = LoopHelper::builder().build_with_target_rate(60.0); // limit to 60 FPS if possible
             loop {
-                let now = Instant::now();
+                loop_helper.loop_start();
                 let game_par = Paragraph::new(self.draw_game()).alignment(Alignment::Center);
                 let (held, h_tet) = self.tetris.get_held();
                 let held_par = Paragraph::new(Text::styled(held, get_style(h_tet)))
@@ -123,7 +100,12 @@ pub mod tetroxide {
                             .title("HELD")
                             .title_alignment(Alignment::Center),
                     );
-                let score_par = Paragraph::new(Text::from(format!("{}", self.tetris.score)))
+                let score_text = if self.tetris.combo_count > 0 {
+                    format!("{}\n{}x COMBO", self.tetris.score, self.tetris.combo_count)
+                } else {
+                    format!("{}", self.tetris.score)
+                };
+                let score_par = Paragraph::new(Text::from(score_text))
                     .alignment(Alignment::Center)
                     .block(
                         Block::default()
@@ -160,31 +142,53 @@ pub mod tetroxide {
                             .title("NEXT")
                             .title_alignment(Alignment::Center),
                     );
+                let game_block = Block::default()
+                    .border_type(BorderType::Double)
+                    .borders(Borders::ALL)
+                    .title("TETROXIDE")
+                    .title_alignment(Alignment::Center);
                 // DRAWING TO THE TERMINAL
                 terminal.draw(|f| {
+                    let size = f.size();
+                    let all = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints(
+                            [
+                                Constraint::Length((size.width - 48) / 2),
+                                Constraint::Length(48),
+                                Constraint::Length((size.width - 48) / 2),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(size);
                     let layout = Layout::default()
                         .direction(Direction::Horizontal)
-                        .constraints([
-                            Constraint::Max(10),
-                            Constraint::Max(24),
-                            Constraint::Max(10),
-                            Constraint::Max(0),
-                        ])
-                        .split(f.size());
+                        .constraints(
+                            [
+                                Constraint::Length(12),
+                                Constraint::Length(24),
+                                Constraint::Length(12),
+                                Constraint::Percentage(100),
+                            ]
+                            .as_ref(),
+                        ).margin(1)
+                        .split(all[1]);
                     let stats_layout = Layout::default()
                         .direction(Direction::Vertical)
                         .constraints([
-                            Constraint::Max(4),
-                            Constraint::Max(3),
-                            Constraint::Max(3),
-                            Constraint::Max(3),
-                            Constraint::Max(0),
+                            Constraint::Length(4),
+                            Constraint::Length(4),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Percentage(100),
                         ])
                         .split(layout[0]);
                     let next_layout = Layout::default()
                         .direction(Direction::Vertical)
-                        .constraints([Constraint::Max(13), Constraint::Max(0)])
+                        .constraints([Constraint::Length(13), Constraint::Percentage(100)])
                         .split(layout[2]);
+                    // Rendering all of our widgets.
+                    f.render_widget(game_block, all[1]);
                     f.render_widget(held_par, stats_layout[0]);
                     f.render_widget(score_par, stats_layout[1]);
                     f.render_widget(level_par, stats_layout[2]);
@@ -221,13 +225,19 @@ pub mod tetroxide {
                     }
                 }
                 self.tetris.frame_advance();
-                let elapsed = Instant::now() - now;
-                let f_dur = Duration::from_micros(16667);
-                if elapsed > f_dur {
-                    continue;
-                }
-                task::sleep(f_dur - elapsed).await;
+                loop_helper.loop_sleep();
             }
+            Ok(())
+        }
+
+        pub async fn run(&mut self) -> Result<()> {
+            enable_raw_mode()?;
+            let mut stdout = io::stdout();
+            execute!(stdout, EnterAlternateScreen)?;
+            let backend = CrosstermBackend::new(stdout);
+            let mut terminal = Terminal::new(backend)?;
+            // Main game event loop
+            self.game_loop(&mut terminal).await?;
             terminal.flush()?;
             disable_raw_mode()?;
             terminal.backend_mut().set_cursor(0, 0)?;
