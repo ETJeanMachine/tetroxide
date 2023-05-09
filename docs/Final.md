@@ -49,57 +49,52 @@ of the app was implemented using [crossterm](https://github.com/crossterm-rs/cro
 ### Particularly Rustic Code
 
 ```rust
-fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool {
-            // Getting our new rotational state.
-            let new_rotation = self.rotation.rotate(clockwise);
-            let (row, col) = (self.origin.0 as i32, self.origin.1 as i32);
-            // These are the different "origin" states we will be testing.
-            let origin = if let Tetromino::I = self.tetromino {
-                match (clockwise, new_rotation) {
-                    (true, State::Up) | (false, State::Right) => (row - 1, col),
-                    (true, State::Right) | (false, State::Down) => (row, col + 1),
-                    ...
-                }
-            } else {
-                (row, col)
-            };
-            let mut origins = vec![origin];
-            // "Kick data" refers to the possible offset values that can be used for the 4 kick states.
-            // There are 8 total different offset value sets; 4 of which are inverted from the other 4.
-            // Refers to the I Tetromino.
-            let kick_data_i1 = vec![(-2, 0), (1, 0), (-2, -1), (1, -2)];
-            let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)];
-            // Refers to the other 5 (non-O) Tetrominos.
-            let kick_data = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
-            // We extend our possible tests with the 4 additional tests:
-            origins.extend(
-                match self.tetromino {
-                    Tetromino::O => return false, /* O Tetromino's have no rotational logic. */
-                    Tetromino::I => match (self.rotation, new_rotation) {
-                        // CW from Spawn State OR CCW to Inverted Spawn State
-                        (State::Up, State::Right) | (State::Left, State::Down) => kick_data_i1,
-                        // CCW to Spawn State OR CW from Inverted Spawn State
-                        (State::Right, State::Up) | (State::Down, State::Left) => {
-                            kick_data_i1.into_iter().map(|(x, y)| (-x, -y)).collect()
-                        }
-                        ...
-                        _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
-                    },
-                    _ => match (self.rotation, new_rotation) {
-                        // CW from Spawn State OR CCW to Inverted Spawn State
-                        (State::Up, State::Right) | (State::Down, State::Right) => kick_data,
-                        // CCW to Spawn State OR CW from Inverted Spawn State
-                        (State::Right, State::Up) | (State::Right, State::Down) => {
-                            kick_data.into_iter().map(|(x, y)| (-x, -y)).collect()
-                        }
-                        ...
-                        _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
-                    },
-                }
-                .into_iter()
-                .map(|(x, y)| (row + y, col + x)),
-            );
+    // These are the different "origin" states we will be testing.
+    let origin = if let Tetromino::I = self.tetromino {
+        match (clockwise, new_rotation) {
+            (true, State::Up) | (false, State::Right) => (row - 1, col),
+            (true, State::Right) | (false, State::Down) => (row, col + 1),
+            ...
         }
+    } else {
+        (row, col)
+    };
+    let mut origins = vec![origin];
+    // "Kick data" refers to the possible offset values that can be used for the 4 kick states.
+    // There are 8 total different offset value sets; 4 of which are inverted from the other 4.
+    // Refers to the I Tetromino.
+    let kick_data_i1 = vec![(-2, 0), (1, 0), (-2, -1), (1, -2)];
+    let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)];
+    // Refers to the other 5 (non-O) Tetrominos.
+    let kick_data = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
+    // We extend our possible tests with the 4 additional tests:
+    origins.extend(
+        match self.tetromino {
+            Tetromino::O => return false, /* O Tetromino's have no rotational logic. */
+            Tetromino::I => match (self.rotation, new_rotation) {
+                // CW from Spawn State OR CCW to Inverted Spawn State
+                (State::Up, State::Right) | (State::Left, State::Down) => kick_data_i1,
+                // CCW to Spawn State OR CW from Inverted Spawn State
+                (State::Right, State::Up) | (State::Down, State::Left) => {
+                    kick_data_i1.into_iter().map(|(x, y)| (-x, -y)).collect()
+                }
+                ...
+                _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
+            },
+            _ => match (self.rotation, new_rotation) {
+                // CW from Spawn State OR CCW to Inverted Spawn State
+                (State::Up, State::Right) | (State::Down, State::Right) => kick_data,
+                // CCW to Spawn State OR CW from Inverted Spawn State
+                (State::Right, State::Up) | (State::Right, State::Down) => {
+                    kick_data.into_iter().map(|(x, y)| (-x, -y)).collect()
+                }
+                ...
+                _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
+            },
+        }
+        .into_iter()
+        .map(|(x, y)| (row + y, col + x)),
+    );
 ```
 
 The above code snippet takes advantage of several Rust features to achieve maximum brevity (previous iterations of this function following more standard design patterns were quite a bit longer). It obviously makes heavy use of enums and pattern matching; with the enums allowing us to very easily describe and match rotations without having to directly play with coordinates, while stacked pattern matching allows us to cover the vast multitude of possible rotation cases in far fewer statements than you could with `if` checks. Working in unison, it also makes use of Rust's ability to stick code blocks anywhere by returning them from the matches, and having them evaluate to Rust's funcional style iterator mapping to breifly compute coordinate permutations. 
