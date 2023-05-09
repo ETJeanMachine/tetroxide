@@ -63,6 +63,7 @@ pub mod tetroxide {
             }
         }
 
+        /// Helper function for drawing the game.
         fn draw_game(&self) -> Text {
             let mut text = Text::default();
             let board = self.tetris.get_state();
@@ -87,6 +88,7 @@ pub mod tetroxide {
             text
         }
 
+        /// Initiates and displays the level select menu.
         async fn level_select(
             &mut self,
             terminal: &mut Terminal<CrosstermBackend<Stdout>>,
@@ -134,6 +136,7 @@ pub mod tetroxide {
             Ok(())
         }
 
+        /// Pauses the game.
         async fn pause(
             &self,
             terminal: &mut Terminal<CrosstermBackend<Stdout>>,
@@ -181,7 +184,8 @@ pub mod tetroxide {
             }
             Ok(None)
         }
-
+        
+        /// Renders the current game state. Uses TUI.
         fn render(
             &self,
             terminal: &mut Terminal<CrosstermBackend<Stdout>>,
@@ -381,6 +385,7 @@ pub mod tetroxide {
             Ok(())
         }
 
+        /// Core game loop; runs and takes user inputs, and exits when closed from the menu.
         async fn game_loop(
             &mut self,
             terminal: &mut Terminal<CrosstermBackend<Stdout>>,
