@@ -13,60 +13,62 @@ of the app was implemented using [crossterm](https://github.com/crossterm-rs/cro
 
 ## Project Execution Summary
 
-* Phase I:
-  * Implementing basic functional components:
-    * `Tetromino` - enum differentiating basic piece shapes and values for the game board.
-    * `State` - enum representing rotation states of an abstract piece.
-    * `Pos` - struct representing a position on the game board.
-    * `ActivePiece` - struct representing some currently active piece, irrespective of the game board.
-    * `Bag` - struct abstracting the random selection of next pieces for play.
-    * `Tetris` - struct managing the other components during play, as well as representing the game board and all other variables we want to track.
-  * Notably, all of these components were designed with some abstraction in mind, to avoid relying entirely on direct calculations on the game board as our entire source of truth or worrying about the exact piece in play.
-  * Implementing basic gameplay logic for the components:
-    * Displaying tetrominos
-    * Rotating a piece state in isolation
-    * Moving a position and bounds-checking it.
-    * Shifting, rotating (checking collisions after abstract rotation), and dropping some actual active piece.
-    * Solidifying a dropped piece and clearing filled lines.
-    * Drawing random pieces from the bag, tracking them in a queue, and spawning them at the top of the board.
-  * Implementing a non-realtime gameplay loop based on basic printing and text input.
-* Phase II:
-  * Basic real-time game loop (via un-optimal terminal printing)
-  * "Gravity"-based drop calculations
-  * Level increases, with an effect on gravity
-  * Basic line clear & manual drop scoring (with level multiplier)
-  * Basic upcoming piece & score displays
-* Phase III:
-  * Full & appropriately timed real-time game loop
-  * Piece solidification delay
-  * Full text UI, with colored pieces and optimal terminal operation
-  * Pause & restart functionality
-  * T-spin bonuses
-  * Combo system
+- Phase I:
+  - Implementing basic functional components:
+    - `Tetromino` - enum differentiating basic piece shapes and values for the game board.
+    - `State` - enum representing rotation states of an abstract piece.
+    - `Pos` - struct representing a position on the game board.
+    - `ActivePiece` - struct representing some currently active piece, irrespective of the game board.
+    - `Bag` - struct abstracting the random selection of next pieces for play.
+    - `Tetris` - struct managing the other components during play, as well as representing the game board and all other variables we want to track.
+  - Notably, all of these components were designed with some abstraction in mind, to avoid relying entirely on direct calculations on the game board as our entire source of truth or worrying about the exact piece in play.
+  - Implementing basic gameplay logic for the components:
+    - Displaying tetrominos
+    - Rotating a piece state in isolation
+    - Moving a position and bounds-checking it.
+    - Shifting, rotating (checking collisions after abstract rotation), and dropping some actual active piece.
+    - Solidifying a dropped piece and clearing filled lines.
+    - Drawing random pieces from the bag, tracking them in a queue, and spawning them at the top of the board.
+  - Implementing a non-realtime gameplay loop based on basic printing and text input.
+- Phase II:
+  - Basic real-time game loop (via un-optimal terminal printing)
+  - "Gravity"-based drop calculations
+  - Level increases, with an effect on gravity
+  - Basic line clear & manual drop scoring (with level multiplier)
+  - Basic upcoming piece & score displays
+
+- Phase III:
+  - Full & appropriately timed real-time game loop
+  - Piece solidification delay
+  - Full text UI, with colored pieces and optimal terminal operation
+  - Pause & restart functionality
+  - Leveling system
+  - T-spin bonuses
+  - Combo system
 
 ## Structure Summery
 
-TODO
+<!-- TODO -->
 
 - Briefly describe the structure of the code (what are the main components, the
   module dependency structure). Why was the project modularized in this way?
 
 ### Abandonded & Difficult Approaches
 
-TODO
+<!-- TODO -->
 
-
-- Were any parts of the code particularly difficult to expres using Rust? What
+- Were any parts of the code particularly difficult to express using Rust? What
   are the challenges in refining and/or refactoring this code to be a better
   example of idiomatic Rust?
 - Describe any approaches attempted and then abandoned and the reasons why. What
   did you learn by undertaking this project?
 
-Jesse - tbh i should put down all of unit testing, I had trouble getting Rust to play nice while also trying to infer what the other crates were doing. Rust isn't a good language for prototyping and often writing Unit Tests were lengthier processes than hand-testing with print statements. 
+<!-- Jesse - tbh i should put down all of unit testing, I had trouble getting Rust to play nice while also trying to infer what the other crates were doing. Rust isn't a good language for prototyping and often writing Unit Tests were lengthier processes than hand-testing with print statements. -->
 
 ### Particularly Rustic Code
 
 ... and on the plus side, we have the following example exemplifying some of Rust's strengths:
+
 ```rust
     // These are the different "origin" states we will be testing.
     let origin = if let Tetromino::I = self.tetromino {
@@ -121,38 +123,34 @@ The above code snippet takes advantage of several Rust features to achieve maxim
 ### Dependencies
 
 For the `tetris` crate (business logic):
-* rand="0.8.4" 
-  * For randomness in generating piece order
-* strum="0.24"
+
+- `rand="0.8.4"`
+  - For randomness in generating piece order
+- `strum="0.24"`
   - For easier enums
-* strum_macros="0.24"
+- `strum_macros="0.24"`
   - Strum extras
 
 For the `tetroxide` crate (GUI and game handling):
 
-* tetris = { path = "../tetris" } 
-  * Path shortening
-* spin_sleep = "1.1.1" 
-  * More accurate thread sleeping
-* clap = { version = "4.2.1", features = ["derive"] }
+- `tetris = { path = "../tetris" }`
+  - Path shortening
+- `spin_sleep = "1.1.1"`
+  - More accurate thread sleeping
+- `clap = { version = "4.2.1", features = ["derive"] }`
   - CLI argument parser
-* crossterm = {version = "0.26.1", features = [ "serde" ]}
+- `crossterm = {version = "0.26.1", features = [ "serde" ]}`
   - OS independent terminal interfaces
-* futures = "0.3"
+- `futures = "0.3"`
   - Asynchronous abstractions, covered in class
-* rand = { version = "0.7.3", default-features = false, features = ["std"] }
+- `rand = { version = "0.7.3", default-features = false, features = ["std"] }`
   - Randomness in piece order generation
+- `[dependencies.async-std]`
+  - Asynchronous functions for the main game loop.
+- `[dependencies.tui]`
+  - Additional TUI dependencies, such as the crossterm backend.
+- `[dependencies.tui-input]`
 
-[dependencies.async-std]
-* version = "1.7.0"
-
-[dependencies.tui]
-* version = "0.19.0"
-* default-features = false
-* features = ["crossterm", 'serde']
-
-[dependencies.tui-input]
-* version = "0.7.0"*
 
 ### Rubric Discussion
 
