@@ -369,6 +369,7 @@ pub mod tetris {
         delay_count: u8,
         gravity_count: f64,
         last_was_spin: SpinType,
+        pub did_tetris: bool,
         pub combo_count: i32,
         pub score: u32,
         pub level: u32,
@@ -400,6 +401,7 @@ pub mod tetris {
                 gravity_count: 0.0,
                 last_was_spin: SpinType::Not,
                 combo_count: -1,
+                did_tetris: false,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -455,6 +457,7 @@ pub mod tetris {
                 gravity_count: 0.0,
                 last_was_spin: SpinType::Not,
                 combo_count: -1,
+                did_tetris: false,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -688,6 +691,7 @@ pub mod tetris {
             // Allowing the held piece to be usable (if not already).
             self.held = (self.held.0, true);
             // Attempts to clear the board.
+            self.did_tetris = false;
             self.try_clear();
         }
 
@@ -712,6 +716,11 @@ pub mod tetris {
             }
             // Adding up our score.
             self.lines += l_count;
+            if l_count == 4 {
+                self.did_tetris = true;
+            }
+            let lvl = self.lines / 10;
+            self.level = if lvl < 13 { lvl + 1 } else { 15 };
             self.score += self.level
                 * match l_count {
                     1 => match self.last_was_spin {

@@ -1,5 +1,4 @@
 pub mod tetroxide {
-    use async_std::task;
     use crossterm::{
         event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, ModifierKeyCode},
         execute,
@@ -7,16 +6,13 @@ pub mod tetroxide {
         Result,
     };
     use spin_sleep::LoopHelper;
-    use std::time::{Duration, Instant};
-    use std::{
-        fmt::format,
-        io::{self, Stdout},
-    };
+    use std::io::{self, Stdout};
+    use std::time::Duration;
     use tetris::tetris::Tetris;
     use tui::{
-        backend::{Backend, CrosstermBackend},
+        backend::CrosstermBackend,
         layout::{Alignment, Constraint, Direction, Layout},
-        style::{Color, Modifier, Style},
+        style::{Color, Style},
         text::{Span, Spans, Text},
         widgets::{Block, BorderType, Borders, List, ListItem, ListState, Paragraph},
         Terminal,
@@ -201,7 +197,9 @@ pub mod tetroxide {
                         .title("HELD")
                         .title_alignment(Alignment::Center),
                 );
-            let score_text = if self.tetris.combo_count > 0 {
+            let score_text = if self.tetris.did_tetris {
+                format!("{}\nTETRIS!", self.tetris.score)
+            }else if self.tetris.combo_count > 0 {
                 format!("{}\n{}x COMBO", self.tetris.score, self.tetris.combo_count)
             } else {
                 format!("{}", self.tetris.score)
