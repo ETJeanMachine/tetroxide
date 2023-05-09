@@ -44,10 +44,29 @@ of the app was implemented using [crossterm](https://github.com/crossterm-rs/cro
   * T-spin bonuses
   * Combo system
 
-## Additional Details
+## Structure Summery
+
+TODO
+
+- Briefly describe the structure of the code (what are the main components, the
+  module dependency structure). Why was the project modularized in this way?
+
+### Abandonded & Difficult Approaches
+
+TODO
+
+
+- Were any parts of the code particularly difficult to expres using Rust? What
+  are the challenges in refining and/or refactoring this code to be a better
+  example of idiomatic Rust?
+- Describe any approaches attempted and then abandoned and the reasons why. What
+  did you learn by undertaking this project?
+
+Jesse - tbh i should put down all of unit testing, I had trouble getting Rust to play nice while also trying to infer what the other crates were doing. Rust isn't a good language for prototyping and often writing Unit Tests were lengthier processes than hand-testing with print statements. 
 
 ### Particularly Rustic Code
 
+... and on the plus side, we have the following example exemplifying some of Rust's strengths:
 ```rust
     // These are the different "origin" states we will be testing.
     let origin = if let Tetromino::I = self.tetromino {
@@ -97,7 +116,7 @@ of the app was implemented using [crossterm](https://github.com/crossterm-rs/cro
     );
 ```
 
-The above code snippet takes advantage of several Rust features to achieve maximum brevity (previous iterations of this function following more standard design patterns were quite a bit longer). It obviously makes heavy use of enums and pattern matching; with the enums allowing us to very easily describe and match rotations without having to directly play with coordinates, while stacked pattern matching allows us to cover the vast multitude of possible rotation cases in far fewer statements than you could with `if` checks. Working in unison, it also makes use of Rust's ability to stick code blocks anywhere by returning them from the matches, and having them evaluate to Rust's funcional style iterator mapping to breifly compute coordinate permutations. 
+The above code snippet takes advantage of several Rust features to achieve maximum brevity (previous iterations of this function following more standard design patterns were quite a bit longer). It obviously makes heavy use of enums and pattern matching; with the enums allowing us to very easily describe and match rotations without having to directly play with coordinates, while stacked pattern matching allows us to cover the vast multitude of possible rotation cases in far fewer statements than you could with `if` checks. Working in unison, it also makes use of Rust's ability to stick code blocks anywhere by returning them from the matches, and having them evaluate to Rust's functional style iterator mapping to briefly compute coordinate permutations. We also demonstrate some of Rust's secondary strengths in the use of small closures and functional programming with the `into_iter` and `map` calls to replace what would otherwise be verbose manually loop rolling.
 
 ### Dependencies
 
@@ -120,7 +139,7 @@ For the `tetroxide` crate (GUI and game handling):
 * crossterm = {version = "0.26.1", features = [ "serde" ]}
   - OS independent terminal interfaces
 * futures = "0.3"
-  - Asynchronous abstractions
+  - Asynchronous abstractions, covered in class
 * rand = { version = "0.7.3", default-features = false, features = ["std"] }
   - Randomness in piece order generation
 
@@ -135,15 +154,15 @@ For the `tetroxide` crate (GUI and game handling):
 [dependencies.tui-input]
 * version = "0.7.0"*
 
+### Rubric Discussion
 
-- Briefly describe the structure of the code (what are the main components, the
-  module dependency structure). Why was the project modularized in this way?
-- Choose (at least) one code excerpt that is a particularly good example of Rust
-  features, idioms, and/or style and describe what makes it “Rusty”.
-- Were any parts of the code particularly difficult to expres using Rust? What
-  are the challenges in refining and/or refactoring this code to be a better
-  example of idiomatic Rust?
-- Describe any approaches attempted and then abandoned and the reasons why. What
-  did you learn by undertaking this project?
+- Completeness: 
+
+While our project accomplished our TODO
+
+- Style/Design:
+
+- Effort/Accomplishment:
+
 - Review the final project grading rubric and discuss any relevant aspects of
   the project.
