@@ -171,8 +171,12 @@ pub mod tetris {
             }
         }
         pub fn in_range(row: i32, col: i32) -> bool {
-            let (row, col) = (row as usize, col as usize);
-            row < MAX_ROW && col < MAX_COL
+            if row < 0 || col < 0 {
+                false
+            } else {
+                let (row, col) = (row as usize, col as usize);
+                row < MAX_ROW && col < MAX_COL
+            }
         }
 
         pub fn in_safe_range(row: usize, col: usize) -> bool {
@@ -406,7 +410,7 @@ pub mod tetris {
                 manually_set_level: false,
                 did_tetris: false,
                 score: 0,
-                level: 0,
+                level: 1,
                 lines: 0,
                 is_game_over: false,
             }
@@ -463,7 +467,7 @@ pub mod tetris {
                 did_tetris: false,
                 manually_set_level: false,
                 score: 0,
-                level: 0,
+                level: 1,
                 lines: 0,
                 is_game_over: false,
             }

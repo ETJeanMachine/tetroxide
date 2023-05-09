@@ -125,13 +125,9 @@ In our abandoned department, we would've liked to have made this a multiplayer g
         (row, col)
     };
     let mut origins = vec![origin];
-    // "Kick data" refers to the possible offset values that can be used for the 4 kick states.
-    // There are 8 total different offset value sets; 4 of which are inverted from the other 4.
-    // Refers to the I Tetromino.
+    ...
     let kick_data_i1 = vec![(-2, 0), (1, 0), (-2, -1), (1, -2)];
-    let kick_data_i2 = vec![(-1, 0), (2, 0), (-1, -2), (2, 1)];
-    // Refers to the other 5 (non-O) Tetrominos.
-    let kick_data = vec![(-1, 0), (-1, -1), (0, 2), (-1, 2)];
+    ...
     // We extend our possible tests with the 4 additional tests:
     origins.extend(
         match self.tetromino {
@@ -146,23 +142,14 @@ In our abandoned department, we would've liked to have made this a multiplayer g
                 ...
                 _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
             },
-            _ => match (self.rotation, new_rotation) {
-                // CW from Spawn State OR CCW to Inverted Spawn State
-                (State::Up, State::Right) | (State::Down, State::Right) => kick_data,
-                // CCW to Spawn State OR CW from Inverted Spawn State
-                (State::Right, State::Up) | (State::Right, State::Down) => {
-                    kick_data.into_iter().map(|(x, y)| (-x, -y)).collect()
-                }
-                ...
-                _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
-            },
+            ...
         }
         .into_iter()
         .map(|(x, y)| (row + y, col + x)),
     );
 ```
 
-The above code snippet takes advantage of several Rust features to achieve maximum brevity (previous iterations of this function following more standard design patterns were quite a bit longer). It obviously makes heavy use of enums and pattern matching; with the enums allowing us to very easily describe and match rotations without having to directly play with coordinates, while stacked pattern matching allows us to cover the vast multitude of possible rotation cases in far fewer statements than you could with `if` checks. Working in unison, it also makes use of Rust's ability to stick code blocks anywhere by returning them from the matches, and having them evaluate to Rust's functional style iterator mapping to briefly compute coordinate permutations. We also demonstrate some of Rust's secondary strengths in the use of small closures and functional programming with the `into_iter` and `map` calls to replace what would otherwise be verbose manually loop rolling. Finally, the ability to use `unreachable!()` macros makes it much easier to succinctly deal with impossible edge cases which the compiler simply isn't able to understand, instead of bothering with extraneous error handling.
+The above code snippet takes advantage of several Rust features to achieve maximum brevity (previous iterations of this function following more standard design patterns were quite a bit longer). It obviously makes heavy use of enums and pattern matching; with the enums allowing us to very easily describe and match rotations without having to directly play with coordinates, while stacked pattern matching allows us to cover the vast multitude of possible rotation cases in far fewer statements than you could with `if` checks. Working in unison, it also makes use of Rust's ability to stick code blocks anywhere by returning them from the matches, and having them demonstrate some of Rust's secondary strengths in the use of small closures and functional programming with the `into_iter` and `map` calls to replace what would otherwise be verbose manually loop rolling. Finally, the ability to use `unreachable!()` macros makes it much easier to succinctly deal with impossible edge cases which the compiler simply isn't able to understand, instead of bothering with extraneous error handling.
 
 ### Dependencies
 
