@@ -123,7 +123,7 @@ pub mod tetroxide {
                             if lvl != 15 {
                                 lvl += 1
                             } else {
-                                lvl = 0
+                                lvl = 1
                             }
                         }
                         KeyCode::Enter => {
