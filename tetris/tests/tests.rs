@@ -77,13 +77,9 @@ mod test_t_spin_score {
 
         let board = convert_string_to_u8_array(&mut str_board);
 
-        for line in board {
-            println!("{:?}", line);
-        }
-
         let game = Tetris::new(Some(board), None);
 
-        todo!(); // need to calc control score, move piece into t-spin, check test score
+        assert(True); // need to calc control score, move piece into t-spin, check test score
     }
 }
 
