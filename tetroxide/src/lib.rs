@@ -9,7 +9,7 @@ pub mod tetroxide {
         style::Print,
         terminal::{
             self, disable_raw_mode, enable_raw_mode, Clear, EnterAlternateScreen,
-            LeaveAlternateScreen,
+            LeaveAlternateScreen, ClearType,
         },
         Result,
     };
@@ -228,7 +228,10 @@ pub mod tetroxide {
                 }
                 task::sleep(f_dur - elapsed).await;
             }
-
+            terminal.flush()?;
+            disable_raw_mode()?;
+            terminal.backend_mut().set_cursor(0, 0)?;
+            println!("Exited Game!");
             Ok(())
         }
     }
