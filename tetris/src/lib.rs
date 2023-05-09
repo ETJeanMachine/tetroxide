@@ -369,6 +369,7 @@ pub mod tetris {
         delay_count: u8,
         gravity_count: f64,
         last_was_spin: SpinType,
+        combo_count: i32,
         pub score: u32,
         pub level: u32,
         pub lines: u32,
@@ -398,6 +399,7 @@ pub mod tetris {
                 delay_count: 0,
                 gravity_count: 0.0,
                 last_was_spin: SpinType::Not,
+                combo_count: -1,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -452,6 +454,7 @@ pub mod tetris {
                 delay_count: 0,
                 gravity_count: 0.0,
                 last_was_spin: SpinType::Not,
+                combo_count: -1,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -733,6 +736,15 @@ pub mod tetris {
                         _ => 0
                     },
                 };
+            
+            if l_count > 0 {
+                self.combo_count += l_count as i32;
+                if self.combo_count > 0 {
+                    self.score += 50 * self.combo_count as u32 * self.level;
+                }
+            } else {
+                self.combo_count = -1;
+            }
 
             self.last_was_spin = SpinType::Not;
         }
