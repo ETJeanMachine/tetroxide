@@ -410,7 +410,7 @@ pub mod tetris {
                 manually_set_level: false,
                 did_tetris: false,
                 score: 0,
-                level: 0,
+                level: 1,
                 lines: 0,
                 is_game_over: false,
             }
@@ -467,7 +467,7 @@ pub mod tetris {
                 did_tetris: false,
                 manually_set_level: false,
                 score: 0,
-                level: 0,
+                level: 1,
                 lines: 0,
                 is_game_over: false,
             }

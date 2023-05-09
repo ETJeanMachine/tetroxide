@@ -113,7 +113,7 @@ pub mod tetroxide {
                     match code {
                         KeyCode::Esc => break,
                         KeyCode::Left => {
-                            if lvl != 0 {
+                            if lvl != 1 {
                                 lvl -= 1
                             } else {
                                 lvl = 15
