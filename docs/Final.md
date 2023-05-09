@@ -13,7 +13,38 @@ of the app was implemented using [crossterm](https://github.com/crossterm-rs/cro
 
 ## Project Execution Summary
 
-Describe the work done for the project and lessons learned.
+* Phase I:
+  * Implementing basic functional components:
+    * `Tetromino` - enum differentiating basic piece shapes and values for the game board.
+    * `State` - enum representing rotation states of an abstract piece.
+    * `Pos` - struct representing a position on the game board.
+    * `ActivePiece` - struct representing some currently active piece, irrespective of the game board.
+    * `Bag` - struct abstracting the random selection of next pieces for play.
+    * `Tetris` - struct managing the other components during play, as well as representing the game board and all other variables we want to track.
+  * Notably, all of these components were designed with some abstraction in mind, to avoid relying entirely on direct calculations on the game board as our entire source of truth or worrying about the exact piece in play.
+  * Implementing basic gameplay logic for the components:
+    * Displaying tetrominos
+    * Rotating a piece state in isolation
+    * Moving a position and bounds-checking it.
+    * Shifting, rotating (checking collisions after abstract rotation), and dropping some actual active piece.
+    * Solidifying a dropped piece and clearing filled lines.
+    * Drawing random pieces from the bag, tracking them in a queue, and spawning them at the top of the board.
+  * Implementing a non-realtime gameplay loop based on basic printing and text input.
+* Phase II:
+  * Basic real-time game loop (via un-optimal terminal printing)
+  * "Gravity"-based drop calculations
+  * Level increases, with an effect on gravity
+  * Basic line clear & manual drop scoring (with level multiplier)
+  * Basic upcoming piece & score displays
+* Phase III:
+  * Full & appropriately timed real-time game loop
+  * Piece solidification delay
+  * Full text UI, with colored pieces and optimal terminal operation
+  * Pause & restart functionality
+  * T-spin bonuses
+  * Combo system
+
+
 
 ## Additional Details
 
