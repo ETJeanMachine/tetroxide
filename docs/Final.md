@@ -112,33 +112,10 @@ fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool 
                 .into_iter()
                 .map(|(x, y)| (row + y, col + x)),
             );
-            // Turning these into Positions (when they're possible).
-            let tests = origins.into_iter().flat_map(|(row, col)| {
-                if Pos::in_range(row, col) {
-                    Some(Pos(row as usize, col as usize))
-                } else {
-                    None
-                }
-            });
-            // Attempting all of our tests.
-            for new_pos in tests {
-                // Returning if we've successfully validated a given state!
-                if self.validate(
-                    &ActivePiece {
-                        tetromino: self.tetromino,
-                        origin: new_pos,
-                        rotation: new_rotation,
-                    },
-                    board,
-                ) {
-                    return true;
-                }
-            }
-            false
         }
 ```
 
-The above code 
+The above code snippet takes advantage of several Rust features to achieve maximum brevity (previous iterations of this function following more standard design patterns were quite a bit longer). It obviously makes heavy use of enums and pattern matching; with the enums allowing us to very easily describe and match rotations without having to directly play with coordinates, while stacked pattern matching allows us to cover the vast multitude of possible rotation cases in far fewer statements than you could with `if` checks. Working in unison, it also makes use of Rust's ability to stick code blocks anywhere by returning them from the matches, and having them evaluate to Rust's funcional style iterator mapping to breifly compute coordinate permutations. 
 
 ### Dependencies
 
