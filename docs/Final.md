@@ -145,9 +145,11 @@ For the `tetroxide` crate (GUI and game handling):
 
 [dependencies.async-std]
 * version = "1.7.0"
+  - Using the async-std library for handling user threads
 
 [dependencies.tui]
 * version = "0.19.0"
+  - enabling TUI useage
 * default-features = false
 * features = ["crossterm", 'serde']
 
