@@ -154,13 +154,13 @@ pub mod tetroxide {
                         .direction(Direction::Horizontal)
                         .constraints(
                             [
-                                Constraint::Percentage(33),
-                                Constraint::Length(46),
-                                Constraint::Percentage(33),
+                                Constraint::Length((size.width - 48) / 2),
+                                Constraint::Length(48),
+                                Constraint::Length((size.width - 48) / 2),
                             ]
                             .as_ref(),
                         )
-                        .split(f.size());
+                        .split(size);
                     let layout = Layout::default()
                         .direction(Direction::Horizontal)
                         .constraints(
