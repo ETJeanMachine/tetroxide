@@ -104,32 +104,34 @@ pub mod tetroxide {
                 } else {
                     Event::FocusLost
                 };
-                if let Event::Key(KeyEvent { code, kind, .. }) = event {
-                    match kind {
-                        KeyEventKind::Press => match code {
-                            KeyCode::Esc => break,
-                            KeyCode::Left => {
-                                if lvl != 0 {
-                                    lvl -= 1
-                                } else {
-                                    lvl = 15
-                                }
+                if let Event::Key(KeyEvent {
+                    code,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) = event
+                {
+                    match code {
+                        KeyCode::Esc => break,
+                        KeyCode::Left => {
+                            if lvl != 0 {
+                                lvl -= 1
+                            } else {
+                                lvl = 15
                             }
-                            KeyCode::Right => {
-                                if lvl != 15 {
-                                    lvl += 1
-                                } else {
-                                    lvl = 0
-                                }
+                        }
+                        KeyCode::Right => {
+                            if lvl != 15 {
+                                lvl += 1
+                            } else {
+                                lvl = 0
                             }
-                            KeyCode::Enter => {
-                                self.tetris.set_level(lvl);
-                                return Ok(());
-                            }
-                            _ => {}
-                        },
+                        }
+                        KeyCode::Enter => {
+                            self.tetris.set_level(lvl);
+                            return Ok(());
+                        }
                         _ => {}
-                    };
+                    }
                 }
                 loop_helper.loop_sleep();
             }
@@ -138,7 +140,7 @@ pub mod tetroxide {
 
         /// Pauses the game.
         async fn pause(
-            &self,
+            &mut self,
             terminal: &mut Terminal<CrosstermBackend<Stdout>>,
         ) -> Result<Option<MenuOpts>> {
             let mut loop_helper = LoopHelper::builder().build_with_target_rate(60.0);
@@ -163,18 +165,22 @@ pub mod tetroxide {
                                 }
                             }
                             KeyCode::Up => match menu_opt {
-                                MenuOpts::Quit => MenuOpts::SetLevel(self.tetris.level),
+                                MenuOpts::Quit => MenuOpts::SetLevel(0),
                                 MenuOpts::Restart => MenuOpts::Quit,
                                 MenuOpts::SetLevel(_) => MenuOpts::Restart,
-                                _ => menu_opt,
                             },
                             KeyCode::Down => match menu_opt {
                                 MenuOpts::Quit => MenuOpts::Restart,
-                                MenuOpts::Restart => MenuOpts::SetLevel(self.tetris.level),
+                                MenuOpts::Restart => MenuOpts::SetLevel(0),
                                 MenuOpts::SetLevel(_) => MenuOpts::Quit,
-                                _ => menu_opt,
                             },
-                            KeyCode::Enter => return Ok(Some(menu_opt)),
+                            KeyCode::Enter => {
+                                match menu_opt {
+                                    MenuOpts::SetLevel(_) => self.level_select(terminal).await?,
+                                    _ => return Ok(Some(menu_opt)),
+                                }
+                                menu_opt
+                            }
                             _ => menu_opt,
                         },
                         _ => menu_opt,
@@ -184,7 +190,7 @@ pub mod tetroxide {
             }
             Ok(None)
         }
-        
+
         /// Renders the current game state. Uses TUI.
         fn render(
             &self,
@@ -203,7 +209,7 @@ pub mod tetroxide {
                 );
             let score_text = if self.tetris.did_tetris {
                 format!("{}\nTETRIS!", self.tetris.score)
-            }else if self.tetris.combo_count > 0 {
+            } else if self.tetris.combo_count > 0 {
                 format!("{}\n{}x COMBO", self.tetris.score, self.tetris.combo_count)
             } else {
                 format!("{}", self.tetris.score)
@@ -401,8 +407,7 @@ pub mod tetroxide {
                             continue;
                         }
                         Some(MenuOpts::Quit) => break,
-                        Some(MenuOpts::SetLevel(_)) => self.level_select(terminal).await?,
-                        None => {}
+                        _ => {}
                     }
                 }
                 let event_waiting = poll(Duration::from_secs(0))?;
@@ -411,33 +416,33 @@ pub mod tetroxide {
                 } else {
                     Event::FocusLost
                 };
-                if let Event::Key(KeyEvent { code, kind, .. }) = event {
-                    match kind {
-                        KeyEventKind::Press => match code {
-                            KeyCode::Esc => match self.pause(terminal).await? {
-                                Some(MenuOpts::Restart) => {
-                                    self.tetris = Tetris::default();
-                                    continue;
-                                }
-                                Some(MenuOpts::Quit) => break,
-                                Some(MenuOpts::SetLevel(_)) => self.level_select(terminal).await?,
-                                None => {}
-                            },
-                            KeyCode::Char('a') | KeyCode::Left => self.tetris.shift(true),
-                            KeyCode::Char('d') | KeyCode::Right => self.tetris.shift(false),
-                            KeyCode::Char('w') | KeyCode::Up => self.tetris.rotate(true),
-                            KeyCode::Char('z')
-                            | KeyCode::Modifier(ModifierKeyCode::LeftControl)
-                            | KeyCode::Modifier(ModifierKeyCode::RightControl) => {
-                                self.tetris.rotate(false)
+                if let Event::Key(KeyEvent {
+                    code,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) = event
+                {
+                    match code {
+                        KeyCode::Esc => match self.pause(terminal).await? {
+                            Some(MenuOpts::Restart) => {
+                                self.tetris = Tetris::default();
+                                continue;
                             }
-                            KeyCode::Char('s') | KeyCode::Down => self.tetris.soft_drop(),
-                            KeyCode::Char(' ') => self.tetris.hard_drop(),
-                            KeyCode::Char('c')
-                            | KeyCode::Modifier(ModifierKeyCode::LeftShift)
-                            | KeyCode::Modifier(ModifierKeyCode::RightShift) => self.tetris.hold(),
-                            _ => {}
+                            Some(MenuOpts::Quit) => break,
+                            Some(MenuOpts::SetLevel(_)) => self.level_select(terminal).await?,
+                            None => {}
                         },
+                        KeyCode::Char('a') | KeyCode::Left => self.tetris.shift(true),
+                        KeyCode::Char('d') | KeyCode::Right => self.tetris.shift(false),
+                        KeyCode::Char('w') | KeyCode::Up => self.tetris.rotate(true),
+                        KeyCode::Char('z')
+                        | KeyCode::Modifier(ModifierKeyCode::LeftControl)
+                        | KeyCode::Modifier(ModifierKeyCode::RightControl) => {
+                            self.tetris.rotate(false)
+                        }
+                        KeyCode::Char('s') | KeyCode::Down => self.tetris.soft_drop(),
+                        KeyCode::Char(' ') => self.tetris.hard_drop(),
+                        KeyCode::Char('c') => self.tetris.hold(),
                         _ => {}
                     }
                 }

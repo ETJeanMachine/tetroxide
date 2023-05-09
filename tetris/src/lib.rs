@@ -171,11 +171,12 @@ pub mod tetris {
             }
         }
         pub fn in_range(row: i32, col: i32) -> bool {
-            row >= 0 && row < MAX_ROW as i32 && col >= 0 && col < MAX_COL as i32
+            let (row, col) = (row as usize, col as usize);
+            row < MAX_ROW && col < MAX_COL
         }
 
         pub fn in_safe_range(row: usize, col: usize) -> bool {
-            row >= 1 && row < (MAX_ROW - 1) && col >= 1 && col < (MAX_COL - 1)
+            (1..(MAX_ROW - 1)).contains(&row) && (1..(MAX_COL - 1)).contains(&col)
         }
     }
 
@@ -474,7 +475,7 @@ pub mod tetris {
         }
 
         pub fn get_state(&self) -> [[u8; MAX_COL]; MAX_ROW] {
-            let mut b_clone = self.board.clone();
+            let mut b_clone = self.board;
             let mut ghost = self.active;
             while ghost.soft_drop(&self.board) {}
             let (g_squares, a_squares) = (ghost.get_squares(), self.active.get_squares());
@@ -529,7 +530,7 @@ pub mod tetris {
             self.delay_count += 1;
             self.delay_count %= 60;
             // checking on a clone of the board to see if we can soft drop...
-            let mut a_clone = self.active.clone();
+            let mut a_clone = self.active;
             if !a_clone.soft_drop(&self.board.clone()) {
                 self.try_lock(true);
             } else {
@@ -660,7 +661,7 @@ pub mod tetris {
             } else {
                 // Here we check to see if the piece is immobile. If it is, we lock it.
                 for i in 0..4 {
-                    let mut cloned = self.active.clone();
+                    let mut cloned = self.active;
                     let v = match i {
                         0 => cloned.shift(true, &self.board),
                         1 => cloned.shift(false, &self.board),
