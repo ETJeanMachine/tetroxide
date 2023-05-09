@@ -738,7 +738,7 @@ pub mod tetris {
                 };
             
             if l_count > 0 {
-                self.combo_count += l_count as i32;
+                self.combo_count += 1;
                 if self.combo_count > 0 {
                     self.score += 50 * self.combo_count as u32 * self.level;
                 }
