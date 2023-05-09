@@ -109,8 +109,6 @@ Does leave a lot to be desired in terms of... sheer readability and understandin
 
 In our abandoned department, we would've liked to have made this a multiplayer game. However, we soon realized that we were undertaking a lot more than we expected when it came to actually working in purely single-player. This is something we may have been able to accomplish given we had one or so more group members, as ultimately, it came down to a time constraint, and fulfilling the fullest scope of the project as we could.
 
-<!-- Jesse - tbh i should put down all of unit testing, I had trouble getting Rust to play nice while also trying to infer what the other crates were doing. Rust isn't a good language for prototyping and often writing Unit Tests were lengthier processes than hand-testing with print statements. -->
-
 ### Particularly Rustic Code
 
 ... and on the plus side, we have the following example exemplifying some of Rust's strengths:
@@ -200,7 +198,7 @@ For the `tetroxide` crate (GUI and game handling):
 ### Rubric Discussion
 
 - Completeness:
-While our project accomplished our MVP; there was quite a bit more we would have liked to get done, such as multiplayer. This mostly did not take place due to our underestimation of how complex Tetris's rotational and scoring systems are. As it stands now, our current implementation is our MVP, and we completed that successfully.
+While our project accomplished our MVP; there was quite a bit more we would have liked to get done, such as multiplayer.  This mostly did not take place due to our underestimation of how complex Tetris's rotational and scoring systems are. As it stands now, our current implementation is our MVP, and we completed that successfully.
 
 - Style/Design:
   - Our overall design is solid. Modularizing into separate GUI/logical crates worked well, and our style, while messy with regards to how TUI-RS works; is consistent and works well.

@@ -27,7 +27,7 @@ pub fn convert_string_to_u8_array(s: &mut String) -> [[u8; MAX_COL]; MAX_ROW] {
 
     let mut board: [[u8; MAX_COL]; MAX_ROW] = [[0; MAX_COL]; MAX_ROW];
 
-    //remove all whitespace
+    //purge all whitespace
     s.retain(|c| c != '\n');
     s.retain(|c| c != '\r');
     s.retain(|c| c != ' ');
@@ -80,8 +80,8 @@ mod test_t_spin_score {
         let game = Tetris::new(Some(board), None);
 
         assert!(true); // need to calc control score, move piece into t-spin, check test score
+
+        // Unit testing was a bear for this, didn't have enough time to alloc to do properly vs working on other area of project.`
     }
 }
 
-// TODO: make unit tests for scoring
-// use frame advance
