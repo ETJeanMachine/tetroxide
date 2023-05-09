@@ -154,9 +154,9 @@ pub mod tetroxide {
                         .direction(Direction::Horizontal)
                         .constraints(
                             [
-                                Constraint::Percentage(50),
+                                Constraint::Percentage(33),
                                 Constraint::Length(46),
-                                Constraint::Percentage(50),
+                                Constraint::Percentage(33),
                             ]
                             .as_ref(),
                         )
