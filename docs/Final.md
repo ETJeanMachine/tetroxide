@@ -58,8 +58,7 @@ fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool 
                 match (clockwise, new_rotation) {
                     (true, State::Up) | (false, State::Right) => (row - 1, col),
                     (true, State::Right) | (false, State::Down) => (row, col + 1),
-                    (true, State::Down) | (false, State::Left) => (row + 1, col),
-                    (true, State::Left) | (false, State::Up) => (row, col - 1),
+                    ...
                 }
             } else {
                 (row, col)
@@ -83,12 +82,7 @@ fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool 
                         (State::Right, State::Up) | (State::Down, State::Left) => {
                             kick_data_i1.into_iter().map(|(x, y)| (-x, -y)).collect()
                         }
-                        // CW to Inverted Spawn State OR CCW from Spawn State
-                        (State::Right, State::Down) | (State::Up, State::Left) => kick_data_i2,
-                        // CCW to Inverted Spawn State OR CW to Spawn State
-                        (State::Down, State::Right) | (State::Left, State::Up) => {
-                            kick_data_i2.into_iter().map(|(x, y)| (-x, -y)).collect()
-                        }
+                        ...
                         _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
                     },
                     _ => match (self.rotation, new_rotation) {
@@ -98,14 +92,7 @@ fn rotate(&mut self, clockwise: bool, board: &[[u8; MAX_COL]; MAX_ROW]) -> bool 
                         (State::Right, State::Up) | (State::Right, State::Down) => {
                             kick_data.into_iter().map(|(x, y)| (-x, -y)).collect()
                         }
-                        // CW from Inverted Spawn State OR CW to Spawn State
-                        (State::Down, State::Left) | (State::Left, State::Up) => {
-                            kick_data.into_iter().map(|(x, y)| (-x, y)).collect()
-                        }
-                        // CCW to Inverted Spawn State OR CCW from Spawn State
-                        (State::Left, State::Down) | (State::Up, State::Left) => {
-                            kick_data.into_iter().map(|(x, y)| (x, -y)).collect()
-                        }
+                        ...
                         _ => unreachable!(), /* THIS SHOULD NEVER HAPPEN. */
                     },
                 }
