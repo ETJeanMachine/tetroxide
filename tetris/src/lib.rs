@@ -370,6 +370,7 @@ pub mod tetris {
         delay_count: u8,
         gravity_count: f64,
         last_was_spin: SpinType,
+        manually_set_level: bool,
         pub did_tetris: bool,
         pub combo_count: i32,
         pub score: u32,
@@ -402,6 +403,7 @@ pub mod tetris {
                 gravity_count: 0.0,
                 last_was_spin: SpinType::Not,
                 combo_count: -1,
+                manually_set_level: false,
                 did_tetris: false,
                 score: 0,
                 level: 0,
@@ -459,6 +461,7 @@ pub mod tetris {
                 last_was_spin: SpinType::Not,
                 combo_count: -1,
                 did_tetris: false,
+                manually_set_level: false,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -467,6 +470,7 @@ pub mod tetris {
         }
 
         pub fn set_level(&mut self, level: u32) {
+            self.manually_set_level = true;
             if level >= 15 {
                 self.level = 15;
             } else {
@@ -721,7 +725,9 @@ pub mod tetris {
                 self.did_tetris = true;
             }
             let lvl = self.lines / 10;
-            self.level = if lvl < 13 { lvl + 1 } else { 15 };
+            if !self.manually_set_level {
+                self.level = if lvl < 13 { lvl + 1 } else { 15 };
+            }
             self.score += self.level
                 * match l_count {
                     1 => match self.last_was_spin {
