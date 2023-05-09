@@ -171,11 +171,12 @@ pub mod tetris {
             }
         }
         pub fn in_range(row: i32, col: i32) -> bool {
-            row >= 0 && row < MAX_ROW as i32 && col >= 0 && col < MAX_COL as i32
+            let (row, col) = (row as usize, col as usize);
+            row < MAX_ROW && col < MAX_COL
         }
 
         pub fn in_safe_range(row: usize, col: usize) -> bool {
-            row >= 1 && row < (MAX_ROW - 1) && col >= 1 && col < (MAX_COL - 1)
+            (1..(MAX_ROW - 1)).contains(&row) && (1..(MAX_COL - 1)).contains(&col)
         }
     }
 
@@ -369,6 +370,8 @@ pub mod tetris {
         delay_count: u8,
         gravity_count: f64,
         last_was_spin: SpinType,
+        manually_set_level: bool,
+        pub did_tetris: bool,
         pub combo_count: i32,
         pub score: u32,
         pub level: u32,
@@ -400,6 +403,8 @@ pub mod tetris {
                 gravity_count: 0.0,
                 last_was_spin: SpinType::Not,
                 combo_count: -1,
+                manually_set_level: false,
+                did_tetris: false,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -455,6 +460,8 @@ pub mod tetris {
                 gravity_count: 0.0,
                 last_was_spin: SpinType::Not,
                 combo_count: -1,
+                did_tetris: false,
+                manually_set_level: false,
                 score: 0,
                 level: 0,
                 lines: 0,
@@ -463,6 +470,7 @@ pub mod tetris {
         }
 
         pub fn set_level(&mut self, level: u32) {
+            self.manually_set_level = true;
             if level >= 15 {
                 self.level = 15;
             } else {
@@ -471,7 +479,7 @@ pub mod tetris {
         }
 
         pub fn get_state(&self) -> [[u8; MAX_COL]; MAX_ROW] {
-            let mut b_clone = self.board.clone();
+            let mut b_clone = self.board;
             let mut ghost = self.active;
             while ghost.soft_drop(&self.board) {}
             let (g_squares, a_squares) = (ghost.get_squares(), self.active.get_squares());
@@ -526,7 +534,7 @@ pub mod tetris {
             self.delay_count += 1;
             self.delay_count %= 60;
             // checking on a clone of the board to see if we can soft drop...
-            let mut a_clone = self.active.clone();
+            let mut a_clone = self.active;
             if !a_clone.soft_drop(&self.board.clone()) {
                 self.try_lock(true);
             } else {
@@ -657,7 +665,7 @@ pub mod tetris {
             } else {
                 // Here we check to see if the piece is immobile. If it is, we lock it.
                 for i in 0..4 {
-                    let mut cloned = self.active.clone();
+                    let mut cloned = self.active;
                     let v = match i {
                         0 => cloned.shift(true, &self.board),
                         1 => cloned.shift(false, &self.board),
@@ -688,6 +696,7 @@ pub mod tetris {
             // Allowing the held piece to be usable (if not already).
             self.held = (self.held.0, true);
             // Attempts to clear the board.
+            self.did_tetris = false;
             self.try_clear();
         }
 
@@ -712,6 +721,13 @@ pub mod tetris {
             }
             // Adding up our score.
             self.lines += l_count;
+            if l_count == 4 {
+                self.did_tetris = true;
+            }
+            let lvl = self.lines / 10;
+            if !self.manually_set_level {
+                self.level = if lvl < 13 { lvl + 1 } else { 15 };
+            }
             self.score += self.level
                 * match l_count {
                     1 => match self.last_was_spin {
