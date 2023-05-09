@@ -1,44 +1,28 @@
 pub mod tetroxide {
     use async_std::task;
     use crossterm::{
-        cursor::{self, Hide, Show},
-        event::{
-            poll, read, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind, ModifierKeyCode,
-        },
+        event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, ModifierKeyCode},
         execute,
-        style::Print,
-        terminal::{
-            self, disable_raw_mode, enable_raw_mode, Clear, EnterAlternateScreen,
-            LeaveAlternateScreen, ClearType,
-        },
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen},
         Result,
     };
-    use std::{
-        fmt::format,
-        io::{self, stdout, Write},
-        time::{Duration, Instant},
-        vec,
-    };
+    use spin_sleep::LoopHelper;
+    use std::io::{self, Stdout};
+    use std::time::{Duration, Instant};
     use tetris::tetris::Tetris;
     use tui::{
         backend::{Backend, CrosstermBackend},
-        layout::{Alignment, Constraint, Direction, Layout, Rect},
+        layout::{Alignment, Constraint, Direction, Layout},
         style::{Color, Style},
         text::{Span, Spans, Text},
-        widgets::{Block, BorderType, Borders, Paragraph},
-        Frame, Terminal,
+        widgets::{Block, Borders, Paragraph},
+        Terminal,
     };
-    use tui_input::backend::crossterm as backend;
-    use tui_input::backend::crossterm::EventHandler;
-    use tui_input::Input;
 
-    enum Inputs {
-        RotateCcw,
-        RotateCw,
-        HardDrop,
-        Drop,
-        Left,
-        Right,
+    enum MenuOpts {
+        Quit,
+        Restart,
+        SetLevel,
     }
 
     pub struct Game {
@@ -97,22 +81,13 @@ pub mod tetroxide {
             text
         }
 
-        pub async fn run(&mut self) -> Result<()> {
-            // let mut stdout = stdout();
-            // execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
+        async fn pause(terminal: Terminal<CrosstermBackend<Stdout>>) {}
 
-            // let stdout = io::stdout();
-            // let backend = CrosstermBackend::new(stdout);
-            // let mut terminal = Terminal::new(backend)?;
-            // terminal.clear()?;
-            enable_raw_mode()?;
-            let mut stdout = io::stdout();
-            execute!(stdout, EnterAlternateScreen)?;
-            let backend = CrosstermBackend::new(stdout);
-            let mut terminal = Terminal::new(backend)?;
-            // Render the widget
+        async fn game_loop(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+            let mut loop_helper = LoopHelper::builder()
+                .build_with_target_rate(60.0); // limit to 60 FPS if possible
             loop {
-                let now = Instant::now();
+                loop_helper.loop_start();
                 let game_par = Paragraph::new(self.draw_game()).alignment(Alignment::Center);
                 let (held, h_tet) = self.tetris.get_held();
                 let held_par = Paragraph::new(Text::styled(held, get_style(h_tet)))
@@ -168,7 +143,7 @@ pub mod tetroxide {
                             Constraint::Max(10),
                             Constraint::Max(24),
                             Constraint::Max(10),
-                            Constraint::Max(0)
+                            Constraint::Max(0),
                         ])
                         .split(f.size());
                     let stats_layout = Layout::default()
@@ -221,13 +196,19 @@ pub mod tetroxide {
                     }
                 }
                 self.tetris.frame_advance();
-                let elapsed = Instant::now() - now;
-                let f_dur = Duration::from_micros(16667);
-                if elapsed > f_dur {
-                    continue;
-                }
-                task::sleep(f_dur - elapsed).await;
+                loop_helper.loop_sleep();
             }
+            Ok(())
+        }
+
+        pub async fn run(&mut self) -> Result<()> {
+            enable_raw_mode()?;
+            let mut stdout = io::stdout();
+            execute!(stdout, EnterAlternateScreen)?;
+            let backend = CrosstermBackend::new(stdout);
+            let mut terminal = Terminal::new(backend)?;
+            // Main game event loop
+            self.game_loop(&mut terminal).await?;
             terminal.flush()?;
             disable_raw_mode()?;
             terminal.backend_mut().set_cursor(0, 0)?;
