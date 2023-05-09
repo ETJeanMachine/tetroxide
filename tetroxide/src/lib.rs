@@ -7,8 +7,11 @@ pub mod tetroxide {
         Result,
     };
     use spin_sleep::LoopHelper;
-    use std::io::{self, Stdout};
     use std::time::{Duration, Instant};
+    use std::{
+        fmt::format,
+        io::{self, Stdout},
+    };
     use tetris::tetris::Tetris;
     use tui::{
         backend::{Backend, CrosstermBackend},
@@ -23,7 +26,7 @@ pub mod tetroxide {
     enum MenuOpts {
         Restart,
         Quit,
-        SetLevel,
+        SetLevel(u32),
     }
 
     #[derive(Debug, Clone, Copy)]
@@ -88,7 +91,52 @@ pub mod tetroxide {
             text
         }
 
-        async fn level_select(&self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) {}
+        async fn level_select(
+            &mut self,
+            terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+        ) -> Result<()> {
+            let mut loop_helper = LoopHelper::builder().build_with_target_rate(60.0);
+            let mut lvl = self.tetris.level;
+            loop {
+                loop_helper.loop_start();
+                self.render(terminal, Some((MenuState::Level, MenuOpts::SetLevel(lvl))))?;
+                let event_waiting = poll(Duration::from_secs(0))?;
+                let event = if event_waiting {
+                    read()?
+                } else {
+                    Event::FocusLost
+                };
+                if let Event::Key(KeyEvent { code, kind, .. }) = event {
+                    match kind {
+                        KeyEventKind::Press => match code {
+                            KeyCode::Esc => break,
+                            KeyCode::Left => {
+                                if lvl != 0 {
+                                    lvl -= 1
+                                } else {
+                                    lvl = 15
+                                }
+                            }
+                            KeyCode::Right => {
+                                if lvl != 15 {
+                                    lvl += 1
+                                } else {
+                                    lvl = 0
+                                }
+                            }
+                            KeyCode::Enter => {
+                                self.tetris.set_level(lvl);
+                                return Ok(());
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                    };
+                }
+                loop_helper.loop_sleep();
+            }
+            Ok(())
+        }
 
         async fn pause(
             &self,
@@ -116,15 +164,15 @@ pub mod tetroxide {
                                 }
                             }
                             KeyCode::Up => match menu_opt {
-                                MenuOpts::Quit => MenuOpts::SetLevel,
+                                MenuOpts::Quit => MenuOpts::SetLevel(self.tetris.level),
                                 MenuOpts::Restart => MenuOpts::Quit,
-                                MenuOpts::SetLevel => MenuOpts::Restart,
+                                MenuOpts::SetLevel(_) => MenuOpts::Restart,
                                 _ => menu_opt,
                             },
                             KeyCode::Down => match menu_opt {
                                 MenuOpts::Quit => MenuOpts::Restart,
-                                MenuOpts::Restart => MenuOpts::SetLevel,
-                                MenuOpts::SetLevel => MenuOpts::Quit,
+                                MenuOpts::Restart => MenuOpts::SetLevel(self.tetris.level),
+                                MenuOpts::SetLevel(_) => MenuOpts::Quit,
                                 _ => menu_opt,
                             },
                             KeyCode::Enter => return Ok(Some(menu_opt)),
@@ -242,22 +290,6 @@ pub mod tetroxide {
                     .direction(Direction::Vertical)
                     .constraints([Constraint::Length(13), Constraint::Percentage(100)])
                     .split(layout[2]);
-                let pause_vert = Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints([
-                        Constraint::Length(5),
-                        Constraint::Length(5),
-                        Constraint::Percentage(100),
-                    ])
-                    .split(layout[1]);
-                let pause_layout = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints([
-                        Constraint::Percentage(26),
-                        Constraint::Length(12),
-                        Constraint::Percentage(100),
-                    ])
-                    .split(pause_vert[1]);
                 // Rendering all of our widgets.
                 f.render_widget(game_block, all[1]);
                 f.render_widget(held_par, stats_layout[0]);
@@ -269,6 +301,22 @@ pub mod tetroxide {
                 if let Some((menu_state, menu_opt)) = menu_data {
                     match menu_state {
                         MenuState::Pause => {
+                            let pause_vert = Layout::default()
+                                .direction(Direction::Vertical)
+                                .constraints([
+                                    Constraint::Length(5),
+                                    Constraint::Length(5),
+                                    Constraint::Percentage(100),
+                                ])
+                                .split(layout[1]);
+                            let pause_layout = Layout::default()
+                                .direction(Direction::Horizontal)
+                                .constraints([
+                                    Constraint::Percentage(26),
+                                    Constraint::Length(12),
+                                    Constraint::Percentage(100),
+                                ])
+                                .split(pause_vert[1]);
                             let items = [
                                 ListItem::new("Restart   "),
                                 ListItem::new("Set Level "),
@@ -291,17 +339,44 @@ pub mod tetroxide {
                             let mut state = ListState::default();
                             let idx = match menu_opt {
                                 MenuOpts::Restart => 0,
-                                MenuOpts::SetLevel => 1,
+                                MenuOpts::SetLevel(_) => 1,
                                 _ => 2,
                             };
                             state.select(Some(idx));
-                            f.render_stateful_widget(
-                                pause_list,
-                                pause_layout[1],
-                                &mut state,
-                            );
+                            f.render_stateful_widget(pause_list, pause_layout[1], &mut state);
                         }
-                        MenuState::Level => todo!(),
+                        MenuState::Level => {
+                            let lvl_vert = Layout::default()
+                                .direction(Direction::Vertical)
+                                .constraints([
+                                    Constraint::Length(5),
+                                    Constraint::Length(3),
+                                    Constraint::Percentage(100),
+                                ])
+                                .split(layout[1]);
+                            let lvl_layout = Layout::default()
+                                .direction(Direction::Horizontal)
+                                .constraints([
+                                    Constraint::Percentage(26),
+                                    Constraint::Length(14),
+                                    Constraint::Percentage(100),
+                                ])
+                                .split(lvl_vert[1]);
+                            if let MenuOpts::SetLevel(n) = menu_opt {
+                                let lvl_par = Paragraph::new(Text::styled(
+                                    format!("{:^12}", n),
+                                    Style::default().fg(Color::Black).bg(Color::White),
+                                ))
+                                .block(
+                                    Block::default()
+                                        .border_type(BorderType::Thick)
+                                        .borders(Borders::ALL)
+                                        .title("LEVEL SELECT")
+                                        .style(Style::default().fg(Color::White).bg(Color::Black)),
+                                );
+                                f.render_widget(lvl_par, lvl_layout[1]);
+                            }
+                        }
                     }
                 }
             })?;
@@ -323,7 +398,7 @@ pub mod tetroxide {
                             continue;
                         }
                         Some(MenuOpts::Quit) => break,
-                        Some(MenuOpts::SetLevel) => todo!(),
+                        Some(MenuOpts::SetLevel(_)) => self.level_select(terminal).await?,
                         None => {}
                     }
                 }
@@ -342,7 +417,7 @@ pub mod tetroxide {
                                     continue;
                                 }
                                 Some(MenuOpts::Quit) => break,
-                                Some(MenuOpts::SetLevel) => todo!(),
+                                Some(MenuOpts::SetLevel(_)) => self.level_select(terminal).await?,
                                 None => {}
                             },
                             KeyCode::Char('a') | KeyCode::Left => self.tetris.shift(true),
