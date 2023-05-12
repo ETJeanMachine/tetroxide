@@ -1,0 +1,115 @@
+tetroxide
+Andrew Idak (ai8194)
+Eric Hamilton (etj2206)
+Jesse Pingitore (jjp9217)
+
+Tetroxide: TUI Tetris
+
+
+**********************************************************************
+**********************************************************************
+
+Score: 64 / 70  (91.42%)
+
+Overall, a very nice project.  Certainly learned a lot about Tetris,
+about the tui-rs library, and achieved MVP.
+
+
+13 / 15: correctness
+
+Game appears to run correctly.  Didn't encounter any panics or other
+incongrous behavior during games.  Rotations, gravity, dropping,
+scoring, etc. all seem to be working correctly.
+
+I apppreciate the effort put into making this "correct" with respect
+to "offical" Tetris; definitely more tricky corner cases than one
+might initially expect from a casual familiarity with the game.
+
+But, no discussion or evidence of testing.  Seem to be exactly two
+`cargo test` tests.
+
+A "polite" terminal program should exit the alternate screen when
+quitting.
+
+14 / 15: style/design
+
+The `lib.rs` file of a crate should typically not wrap it's entire
+contents in `mod xyzzy { ... }`.  This adds an unnecessary level of
+indirection; e.g., in `tetroxide/src/lib.rs` needing to write
+`use tetris::tetris::{SpinType, Tetris};` rather than simply `use
+tetris::{SpinType, Tetris};`.
+
+But, very good separation between the core `tetris` logic crate and
+the `tetroxide` TUI frontend crate.  Obviously beyond the scope of
+this project, but should scale nicely to a different GUI frontend
+crate.
+
+Great! Clean of `cargo check` and `cargo clippy` warnings.
+
+Nice to make `Bag` an (infinite) `Iterator`; good use of `Iterator`
+trait.
+
+Not clear why the board is `u8` rather than simply `bool` or, if it is
+relevant to track the kind of tetromino at each position, then
+`[[Tetromino; MAX_COL]; MAX_ROW]` would seem to be more accurate.
+
+Good use of nested pattern matching and iterators in rotation; also,
+nice to combine success/failure result with an update of the `&mut
+self`.
+
+
+27 / 30: effort/accomplishment
+
+Great work; rated as "moderate/challenging".
+
+Also, a fair amount of code written (> 400LoC/person).  And, the code
+that is written appears to be rather dense in functionality, not just
+boilerplate.
+
+Sounds like you learned a bit about tui-rs.  Given the utility of a
+high-quality TUI library, surprising that you (and other teams) found
+tui-rs to be frustrating and there seems to not be another similar
+crate.
+
+
+10 / 10: presentation
+
+Great presentation.  Nice to have both a demo and a proper
+presentation.
+
+Perhaps spent a bit too much on the mechanics of Tetris; while there
+are some interesting aspects, could probably have skipped some of the
+basics.
+
+
+**********************************************************************
+**********************************************************************
+
+========================================================================================================================
+ Language                                                     Files        Lines         Code     Comments       Blanks
+========================================================================================================================
+ Rust                                                             5         1372         1229           74           69
+------------------------------------------------------------------------------------------------------------------------
+ ./tetris/tests/tests.rs                                                      87           60           11           16
+ ./tetroxide/src/main.rs                                                      50           46            2            2
+ ./tetroxide/src/tests.rs                                                      0            0            0            0
+ ./tetris/src/lib.rs                                                         768          673           57           38
+ ./tetroxide/src/lib.rs                                                      467          450            4           13
+------------------------------------------------------------------------------------------------------------------------
+ Plain Text                                                       2           40            0           40            0
+------------------------------------------------------------------------------------------------------------------------
+ ./tetris/tests/assets/test_tspin.txt                                         20            0           20            0
+ ./tetris/tests/assets/testnew.txt                                            20            0           20            0
+------------------------------------------------------------------------------------------------------------------------
+ TOML                                                             3           38           28            2            8
+------------------------------------------------------------------------------------------------------------------------
+ ./tetroxide/Cargo.toml                                                       24           18            1            5
+ ./tetris/Cargo.toml                                                          12            8            1            3
+ ./Cargo.toml                                                                  2            2            0            0
+------------------------------------------------------------------------------------------------------------------------
+ Markdown                                                         1            9            0            6            3
+------------------------------------------------------------------------------------------------------------------------
+ ./README.md                                                                   9            0            6            3
+========================================================================================================================
+ Total                                                           11         1459         1257          122           80
+========================================================================================================================
