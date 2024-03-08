@@ -1,9 +1,16 @@
-# Tetroxide
+# Tetroixde
 
-Team members:
+Command-Line Implementation of Tetris written in Rust. Originally a college project for a Rust language course.
 
-- Eric Hamilton
-- Jesse Pingitore
-- Andrew Idak
+## How to install & run
+- Ensure that [rust is installed](https://www.rust-lang.org/tools/install).
+- Clone the project using `git clone https://github.com/ETJeanMachine/tetroxide.git`.
+- `cd` into the directory `tetroxide` and run `cargo run`.
 
-PLEASE IGNORE COMMITS PRIOR TO a2fd407007abe8d77447bbd2b6aaac0344a7ef29 FOR GRADING PURPOSES. ALL SUBSEQUENT COMMITS ARE FOR PERSONAL PURPOSES.
+## How to play
+- `A` and `D`, or `←` and `→` to move left & right.
+- `W` or `↑` to rotate
+- `S` or `↓` to soft-drop the piece.
+- `C` to hold a piece.
+- `Space` to hard drop a piece.
+- `Esc` to enter a menu to change the level, restart, or quit the game.
