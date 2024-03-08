@@ -1,6 +1,6 @@
 # Tetroixde
 
-Command-Line Implementation of Tetris written in Rust. Originally a college project for a Rust language course.
+Command-Line implementation of Tetris written in Rust. Originally a college project for a Rust language course.
 
 ## How to install & run
 - Ensure that [rust is installed](https://www.rust-lang.org/tools/install).
